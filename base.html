@@ -1,0 +1,1220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Loan Approval Prediction{% endblock %}</title>
+    <!-- Google Fonts: Outfit & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5 & Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        :root {
+            --bg-primary: #050812;
+            --bg-secondary: #0b121f;
+            --bg-card: rgba(18, 25, 40, 0.45);
+            --bg-card-hover: rgba(30, 40, 60, 0.55);
+            --text-primary: #ffffff;
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+            --accent-primary: #06b6d4;
+            --accent-secondary: #38bdf8;
+            --accent-purple: #8b5cf6;
+            --accent-green: #22c55e;
+            --accent-red: #ef4444;
+            --accent-orange: #f59e0b;
+            --border-color: rgba(255, 255, 255, 0.10);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --glass-shadow: 0 15px 40px rgba(0, 0, 0, 0.35);
+            --shadow-glow: 0 0 35px rgba(56, 189, 248, 0.14);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            display: flex;
+            min-height: 100vh;
+            flex-direction: column;
+            background: var(--bg-primary);
+            background-image: 
+                radial-gradient(circle at 10% 15%, rgba(6, 182, 212, 0.08) 0%, transparent 35%),
+                radial-gradient(circle at 90% 85%, rgba(59, 130, 246, 0.08) 0%, transparent 35%);
+            background-attachment: fixed;
+            color: var(--text-primary);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        h1, h2, h3, h4, h5, h6, .brand-font {
+            font-family: 'Outfit', sans-serif;
+        }
+        
+        /* Modern Glass Sidebar */
+        .sidebar {
+            width: 270px;
+            background: rgba(18, 25, 40, 0.48);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            min-height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            padding: 28px 0;
+            z-index: 1000;
+            transition: transform 0.35s ease, box-shadow 0.35s ease;
+            border-right: 1px solid var(--glass-border);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: 0 25px 70px rgba(0, 0, 0, 0.32);
+        }
+        
+        .sidebar-brand {
+            color: var(--text-primary);
+            font-size: 1.4rem;
+            font-weight: 800;
+            text-decoration: none;
+            padding: 20px 24px;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            letter-spacing: -0.02em;
+            transition: all 0.3s ease;
+        }
+        
+        .sidebar-brand:hover {
+            background: rgba(30, 40, 60, 0.4);
+        }
+        
+        .brand-logo {
+            width: 180px;
+            height: 54px;
+            transition: all 0.3s ease;
+            filter: drop-shadow(0 0 8px rgba(6, 182, 212, 0.3));
+        }
+        
+        .sidebar-brand:hover .brand-logo {
+            transform: scale(1.02);
+            filter: drop-shadow(0 0 15px rgba(6, 182, 212, 0.5));
+        }
+        
+        .sidebar-nav {
+            list-style: none;
+            padding: 16px 12px;
+            margin: 0;
+            flex: 1;
+            overflow-y: auto;
+        }
+        
+        .sidebar-nav li {
+            margin-bottom: 4px;
+        }
+        
+        .sidebar-nav a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            padding: 11px 16px;
+            display: flex;
+            align-items: center;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 10px;
+            font-weight: 500;
+            font-size: 0.925rem;
+            position: relative;
+        }
+        
+        .sidebar-nav a:hover {
+            background: rgba(30, 40, 60, 0.65);
+            color: var(--text-primary);
+            transform: translateX(6px);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.18);
+        }
+        
+        .sidebar-nav a.active {
+            background: rgba(8, 16, 34, 0.85);
+            color: var(--text-primary);
+            border: 1px solid rgba(56, 189, 248, 0.22);
+            font-weight: 600;
+            box-shadow: 0 20px 50px rgba(56, 189, 248, 0.14);
+        }
+        
+        .sidebar-nav a.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 20%;
+            bottom: 20%;
+            width: 3px;
+            background: var(--accent-primary);
+            border-radius: 0 4px 4px 0;
+            box-shadow: 0 0 8px var(--accent-primary);
+        }
+        
+        .sidebar-nav a i {
+            margin-right: 12px;
+            font-size: 1.15rem;
+            width: 28px;
+            height: 28px;
+            text-align: center;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.3s ease, filter 0.3s ease;
+            filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.22));
+        }
+
+        .sidebar-nav a:hover i {
+            transform: rotate(8deg) scale(1.15);
+        }
+        
+        .sidebar-nav .nav-header {
+            color: var(--text-muted);
+            font-size: 0.675rem;
+            text-transform: uppercase;
+            letter-spacing: 1.8px;
+            padding: 16px 16px 8px;
+            font-weight: 700;
+        }
+        
+        .sidebar-user-card {
+            margin: 0 12px 12px;
+            padding: 12px 14px;
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .main-wrapper {
+            margin-left: 270px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: transparent;
+            min-width: 0;
+        }
+        
+        .top-navbar {
+            background: rgba(10, 16, 30, 0.40);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            padding: 18px 28px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+            position: sticky;
+            top: 0;
+            z-index: 999;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.32);
+            border-radius: 0 0 22px 0;
+        }
+        
+        .content-area {
+            flex: 1;
+            padding: 28px;
+        }
+        
+        @media (max-width: 992px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            .sidebar.show {
+                transform: translateX(0);
+            }
+            .main-wrapper {
+                margin-left: 0;
+            }
+        }
+        
+        .user-avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 1rem;
+            box-shadow: 0 0 12px rgba(6, 182, 212, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .search-shortcut-pill {
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 6px 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.825rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .search-shortcut-pill:hover {
+            background: rgba(51, 65, 85, 0.6);
+            border-color: rgba(255, 255, 255, 0.15);
+            color: var(--text-primary);
+        }
+
+        .kbd-pill {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 1px 6px;
+            font-size: 0.7rem;
+            font-family: monospace;
+            color: var(--text-muted);
+        }
+        
+        .card {
+            background: rgba(18, 25, 40, 0.62);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 22px;
+            box-shadow: 0 24px 70px rgba(0, 0, 0, 0.24);
+            transition: all 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 28px 90px rgba(0, 0, 0, 0.28);
+            border-color: rgba(255, 255, 255, 0.12);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
+            border: none;
+            color: white;
+            font-weight: 700;
+            padding: 10px 24px;
+            border-radius: 14px;
+            transition: all 0.25s ease;
+            box-shadow: 0 14px 35px rgba(6, 182, 212, 0.22);
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(135deg, var(--accent-secondary) 0%, var(--accent-primary) 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 20px 40px rgba(6, 182, 212, 0.28);
+            color: white;
+        }
+        
+        .btn-outline-primary {
+            border: 1px solid rgba(56, 189, 248, 0.45);
+            color: var(--accent-primary);
+            font-weight: 700;
+            padding: 9px 22px;
+            border-radius: 14px;
+            transition: all 0.25s ease;
+            background: rgba(255, 255, 255, 0.06);
+        }
+        
+        .btn-outline-primary:hover {
+            background: rgba(56, 189, 248, 0.18);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(6, 182, 212, 0.2);
+        }
+
+        .form-control, .form-select {
+            background: rgba(15, 23, 42, 0.72);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: var(--text-primary);
+            border-radius: 14px;
+            padding: 12px 16px;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+        }
+        
+        .form-control:focus, .form-select:focus {
+            background: rgba(15, 23, 42, 0.82);
+            border-color: rgba(56, 189, 248, 0.55);
+            color: var(--text-primary);
+            box-shadow: 0 0 0 0.3rem rgba(56, 189, 248, 0.12);
+        }
+        
+        .form-control::placeholder {
+            color: var(--text-muted);
+        }
+        
+        .alert {
+            border-radius: 12px;
+            border: none;
+            backdrop-filter: blur(10px);
+        }
+        
+        .alert-success {
+            background: rgba(16, 185, 129, 0.12);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+        
+        .alert-danger {
+            background: rgba(239, 68, 68, 0.12);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+        
+        .alert-info {
+            background: rgba(6, 182, 212, 0.12);
+            color: #22d3ee;
+            border: 1px solid rgba(6, 182, 212, 0.3);
+        }
+
+        /* Custom Scrollbars */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.6);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(51, 65, 85, 0.8);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-primary);
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Modern Glass Sidebar -->
+    <aside class="sidebar">
+        <div>
+            <a href="/" class="sidebar-brand">
+                <img src="{{ url_for('static', filename='img/logo.svg') }}" alt="SmartLoanApprove" class="brand-logo">
+            </a>
+            
+            <ul class="sidebar-nav">
+                <li class="nav-header">Main Menu</li>
+                <li>
+                    <a href="/" class="{% if request.endpoint == 'home' %}active{% endif %}">
+                        <i class="bi bi-grid-1x2-fill"></i> Dashboard
+                    </a>
+                </li>
+                <li>
+                    <a href="/about" class="{% if request.endpoint == 'about' %}active{% endif %}">
+                        <i class="bi bi-info-circle-fill"></i> About Platform
+                    </a>
+                </li>
+
+                {% if current_user.is_authenticated %}
+                <li class="nav-header">Workspace</li>
+                <li>
+                    <a href="/analytics" class="{% if request.endpoint == 'analytics' %}active{% endif %}">
+                        <i class="bi bi-bar-chart-line-fill"></i> Data Analytics
+                    </a>
+                </li>
+                <li>
+                    <a href="/chatbot" class="{% if request.endpoint == 'chatbot' %}active{% endif %}">
+                        <i class="bi bi-robot"></i> AI Loan Assistant
+                    </a>
+                </li>
+                <li>
+                    <a href="/emi-calculator" class="{% if request.endpoint == 'emi_calculator' %}active{% endif %}">
+                        <i class="bi bi-calculator-fill"></i> EMI Calculator
+                    </a>
+                </li>
+                {% if not current_user.is_admin %}
+                <li>
+                    <a href="/support" class="{% if request.endpoint == 'support_page' %}active{% endif %}">
+                        <i class="bi bi-headset"></i> Support Center
+                    </a>
+                </li>
+                <li>
+                    <a href="/workflow" class="{% if request.endpoint == 'workflow_page' %}active{% endif %}">
+                        <i class="bi bi-diagram-3"></i> Application Workflow
+                    </a>
+                </li>
+                {% endif %}
+                <li>
+                    <a href="/predict" class="{% if request.endpoint == 'prediction_page' %}active{% endif %}">
+                        <i class="bi bi-magic"></i> AI Prediction
+                    </a>
+                </li>
+                <li>
+                    <a href="/history" class="{% if request.endpoint == 'prediction_history_page' %}active{% endif %}">
+                        <i class="bi bi-clock-history"></i> Prediction History
+                    </a>
+                </li>
+                {% if not current_user.is_admin %}
+                <li>
+                    <a href="/enterprise-application" class="{% if request.endpoint == 'enterprise_application_page' %}active{% endif %}">
+                        <i class="bi bi-file-earmark-plus"></i> Enterprise Application
+                    </a>
+                </li>
+                {% endif %}
+                
+                {% if current_user.is_admin %}
+                <li class="nav-header">Admin Workspace</li>
+                <li>
+                    <a href="/admin" class="{% if request.endpoint == 'admin' %}active{% endif %}">
+                        <i class="bi bi-people-fill"></i> User Management
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/support" class="{% if request.endpoint == 'admin_support_page' %}active{% endif %}">
+                        <i class="bi bi-headset"></i> Support Management
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/workflow" class="{% if request.endpoint == 'admin_workflow_page' %}active{% endif %}">
+                        <i class="bi bi-diagram-3"></i> Workflow Management
+                    </a>
+                </li>
+                {% endif %}
+                {% endif %}
+            </ul>
+        </div>
+        
+        {% if current_user.is_authenticated %}
+        <div class="sidebar-user-card">
+            <div class="d-flex align-items-center gap-2">
+                <div class="user-avatar" style="width: 32px; height: 32px; font-size: 0.85rem;">
+                    {{ current_user.username[0]|upper }}
+                </div>
+                <div style="line-height: 1.2;">
+                    <div class="fw-bold text-white" style="font-size: 0.825rem;">{{ current_user.username }}</div>
+                    <span class="badge bg-dark text-info border border-info border-opacity-25" style="font-size: 0.65rem;">
+                        {% if current_user.is_admin %}Admin{% else %}Verified User{% endif %}
+                    </span>
+                </div>
+            </div>
+            <a href="/logout" class="btn btn-sm btn-link text-danger p-0" title="Logout">
+                <i class="bi bi-box-arrow-right fs-6"></i>
+            </a>
+        </div>
+        {% endif %}
+    </aside>
+
+    <!-- Main Wrapper -->
+    <div class="main-wrapper">
+        <!-- Top Navbar -->
+        <nav class="top-navbar">
+            <div class="d-flex align-items-center gap-3">
+                <button class="btn btn-outline-secondary d-lg-none py-1 px-2" id="sidebarToggle">
+                    <i class="bi bi-list fs-5"></i>
+                </button>
+                <h5 class="mb-0 fw-bold text-white brand-font">{% block page_title %}Dashboard{% endblock %}</h5>
+            </div>
+            
+            <div class="d-flex align-items-center gap-3">
+                <!-- Search Bar Shortcut -->
+                <div class="search-shortcut-pill d-none d-md-flex" onclick="document.getElementById('globalSearchInput')?.focus()">
+                    <i class="bi bi-search"></i>
+                    <input type="text" id="globalSearchInput" placeholder="Search applications..." style="background: none; border: none; outline: none; color: white; width: 140px; font-size: 0.825rem;">
+                    <span class="kbd-pill">Ctrl K</span>
+                </div>
+                
+                <!-- System Status Indicator -->
+                <div class="d-none d-sm-flex align-items-center gap-2 px-3 py-1.5 rounded-pill" style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.25);">
+                    <span class="live-indicator"></span>
+                    <span style="font-size: 0.75rem; color: #34d399; font-weight: 600;">AI Engine Online</span>
+                </div>
+                
+                <!-- Notifications Dropdown -->
+                {% if current_user.is_authenticated %}
+                <div class="dropdown">
+                    <button class="btn btn-outline-secondary rounded-circle position-relative p-0 d-flex align-items-center justify-content-center" id="notificationBellBtn" data-bs-toggle="dropdown" aria-expanded="false" style="width: 40px; height: 40px; border-color: rgba(255,255,255,0.15); background: rgba(30,41,59,0.5);">
+                        <i class="bi bi-bell-fill text-white fs-5"></i>
+                        <span id="notificationBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger shadow-lg" style="font-size: 0.65rem; display: none; padding: 4px 7px;">0</span>
+                    </button>
+                    <div id="notificationsDropdown" class="dropdown-menu dropdown-menu-end p-0 shadow-2xl border-0" style="width: 380px; background: rgba(15, 23, 42, 0.96); backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 0.12) !important; border-radius: 18px; overflow: hidden; margin-top: 10px;">
+                        <div class="p-3 border-bottom border-secondary border-opacity-25 d-flex align-items-center justify-content-between" style="background: rgba(30, 41, 59, 0.7);">
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="bi bi-bell-fill text-info fs-5"></i>
+                                <h6 class="mb-0 text-white fw-bold brand-font" style="font-size: 0.95rem;">Notifications</h6>
+                                <span id="unreadCountPill" class="badge bg-info bg-opacity-25 text-info border border-info border-opacity-25 rounded-pill" style="font-size: 0.7rem; display:none;">0 New</span>
+                            </div>
+                            <button class="btn btn-link text-info p-0 text-decoration-none small" onclick="markAllRead()" style="font-size: 0.75rem; font-weight: 600;">
+                                <i class="bi bi-check2-all me-1"></i>Mark all read
+                            </button>
+                        </div>
+                        <div id="notificationsList" style="max-height: 380px; overflow-y: auto; scrollbar-width: thin;">
+                            <div class="p-4 text-center text-secondary small">
+                                <div class="spinner-border spinner-border-sm text-info mb-2" role="status"></div>
+                                <div>Fetching notifications...</div>
+                            </div>
+                        </div>
+                        <div class="p-2 text-center border-top border-secondary border-opacity-25" style="background: rgba(15, 23, 42, 0.9);">
+                            <a href="/workflow" class="text-info text-decoration-none small fw-semibold">
+                                View All Applications & Updates <i class="bi bi-arrow-right ms-1"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <div class="user-info">
+                    {% if current_user.is_authenticated %}
+                    <div class="dropdown">
+                        <div class="d-flex align-items-center gap-2" style="cursor: pointer;" data-bs-toggle="dropdown">
+                            <div class="user-avatar">
+                                {{ current_user.username[0]|upper }}
+                            </div>
+                            <div class="d-none d-sm-block">
+                                <div class="fw-bold text-white small" style="line-height: 1.2;">{{ current_user.username }}</div>
+                                <small style="color: var(--text-muted); font-size: 0.7rem;">{% if current_user.is_admin %}Administrator{% else %}Member{% endif %}</small>
+                            </div>
+                            <i class="bi bi-chevron-down text-muted small d-none d-sm-block ms-1"></i>
+                        </div>
+                        <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark p-2" style="background: rgba(15, 23, 42, 0.95); border: 1px solid var(--border-color);">
+                            <li><a class="dropdown-item rounded small" href="/workflow"><i class="bi bi-diagram-3 me-2 text-info"></i>My Applications</a></li>
+                            <li><a class="dropdown-item rounded small" href="/analytics"><i class="bi bi-bar-chart me-2 text-info"></i>My Analytics</a></li>
+                            <li><a class="dropdown-item rounded small" href="/history"><i class="bi bi-clock-history me-2 text-info"></i>Prediction History</a></li>
+                            <li><hr class="dropdown-divider border-secondary border-opacity-25"></li>
+                            <li><a class="dropdown-item rounded small text-danger" href="/logout"><i class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
+                        </ul>
+                    </div>
+                    {% else %}
+                    <div class="d-flex gap-2">
+                        <a href="/login" class="btn btn-outline-primary btn-sm px-3">Login</a>
+                        <a href="/register" class="btn btn-primary btn-sm px-3">Register</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content Area -->
+        <div class="content-area">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show d-flex align-items-center gap-2 mb-4" role="alert">
+                            <i class="bi {% if category == 'success' %}bi-check-circle-fill{% elif category == 'danger' %}bi-exclamation-triangle-fill{% else %}bi-info-circle-fill{% endif %} fs-5"></i>
+                            <div>{{ message }}</div>
+                            <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            {% block content %}{% endblock %}
+        </div>
+
+        <!-- Modern Dashboard Footer -->
+        <footer style="background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(16px); border-top: 1px solid var(--border-color); padding: 32px 0; margin-top: auto;">
+            <div class="container-fluid px-4">
+                <div class="row g-4 justify-content-between">
+                    <div class="col-md-5">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <div class="sidebar-brand-icon" style="width: 28px; height: 28px; font-size: 0.9rem;">
+                                <i class="bi bi-bank"></i>
+                            </div>
+                            <span class="fw-bold text-white brand-font fs-5">LoanPredict AI</span>
+                        </div>
+                        <p class="text-secondary small mb-3" style="max-width: 400px; line-height: 1.5;">
+                            Empowering fast, accurate, and transparent credit risk evaluation powered by machine learning algorithms and real-time financial intelligence.
+                        </p>
+                        <div class="d-flex gap-2">
+                            <span class="badge bg-dark text-info border border-info border-opacity-25 px-2.5 py-1">Python 3.12</span>
+                            <span class="badge bg-dark text-info border border-info border-opacity-25 px-2.5 py-1">Flask 3.0</span>
+                            <span class="badge bg-dark text-info border border-info border-opacity-25 px-2.5 py-1">Scikit-Learn ML</span>
+                            <span class="badge bg-dark text-info border border-info border-opacity-25 px-2.5 py-1">MySQL</span>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <h6 class="text-white fw-bold mb-3 brand-font">Quick Navigation</h6>
+                        <div class="d-flex flex-column gap-2 small">
+                            <a href="/" class="text-secondary text-decoration-none hover-primary"><i class="bi bi-chevron-right me-1 text-info"></i>Dashboard Home</a>
+                            <a href="/loan-application" class="text-secondary text-decoration-none hover-primary"><i class="bi bi-chevron-right me-1 text-info"></i>Apply for Loan</a>
+                            <a href="/emi-calculator" class="text-secondary text-decoration-none hover-primary"><i class="bi bi-chevron-right me-1 text-info"></i>Interactive EMI Calculator</a>
+                            <a href="/chatbot" class="text-secondary text-decoration-none hover-primary"><i class="bi bi-chevron-right me-1 text-info"></i>AI Banking Assistant</a>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <h6 class="text-white fw-bold mb-3 brand-font">Support & System Info</h6>
+                        <div class="text-secondary small d-flex flex-column gap-1.5">
+                            <div><i class="bi bi-envelope text-info me-2"></i>pranavbachhav369@gmail.com</div>
+                            <div><i class="bi bi-telephone text-info me-2"></i>+91 9529213949 / +91 7447877388</div>
+                            <div><i class="bi bi-geo-alt text-info me-2"></i>Malegaon, Nashik, Maharashtra</div>
+                        </div>
+                    </div>
+                </div>
+                <hr style="border-color: var(--border-color); margin: 24px 0 16px;">
+                <div class="d-flex flex-wrap justify-content-between align-items-center text-muted small">
+                    <div>&copy; 2026 LoanPredict AI Platform. All rights reserved.</div>
+                    <div class="d-flex gap-3">
+                        <a href="/about" class="text-muted text-decoration-none">About</a>
+                        <a href="/contact" class="text-muted text-decoration-none">Contact</a>
+                        <a href="#" class="text-muted text-decoration-none">Privacy Policy</a>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Core Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    <script>
+        // Sidebar toggle for responsive view
+        document.getElementById('sidebarToggle')?.addEventListener('click', function() {
+            document.querySelector('.sidebar').classList.toggle('show');
+        });
+
+        // Global search shortcut trigger (Ctrl + K)
+        document.addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                document.getElementById('globalSearchInput')?.focus();
+            }
+        });
+
+        // Notification System
+        {% if current_user.is_authenticated %}
+        async function loadNotifications() {
+            try {
+                const response = await fetch('/api/notifications');
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    // Update badge
+                    const badge = document.getElementById('notificationBadge');
+                    if (data.unread_count > 0) {
+                        badge.textContent = data.unread_count > 9 ? '9+' : data.unread_count;
+                        badge.style.display = 'block';
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                    
+                    // Update notifications list
+                    const list = document.getElementById('notificationsList');
+                    if (data.notifications.length === 0) {
+                        list.innerHTML = '<li class="px-2 py-3 text-center text-white small">No notifications</li>';
+                    } else {
+                        list.innerHTML = data.notifications.map(notif => `
+                            <li>
+                                <a class="dropdown-item rounded small text-wrap py-2 ${notif.is_read ? 'text-white' : 'text-white fw-bold'}" 
+                                   onclick="handleNotificationClick(${notif.id}, '${notif.notification_type}')"
+                                   style="cursor: pointer; border-left: 3px solid ${notif.is_read ? 'transparent' : '#06b6d4'};">
+                                    <div class="mb-1">${notif.title}</div>
+                                    <div class="text-white small" style="font-size: 0.75rem;">${notif.message.substring(0, 80)}${notif.message.length > 80 ? '...' : ''}</div>
+                                    <div class="text-white small mt-1" style="font-size: 0.7rem;">${notif.created_at_formatted}</div>
+                                </a>
+                            </li>
+                        `).join('');
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading notifications:', error);
+            }
+        }
+
+        async function handleNotificationClick(notificationId, type) {
+            // Mark as read
+            try {
+                await fetch(`/api/notifications/${notificationId}/read`, { method: 'PUT' });
+            } catch (error) {
+                console.error('Error marking notification as read:', error);
+            }
+            
+            // Navigate based on notification type
+            if (type === 'support_request' || type === 'support_reply' || type === 'support_resolved') {
+                window.location.href = '/support';
+            }
+        }
+
+        async function markAllRead() {
+            try {
+                const response = await fetch('/api/notifications/read-all', { method: 'PUT' });
+                const data = await response.json();
+                if (data.status === 'success') {
+                    loadNotifications();
+                }
+            } catch (error) {
+                console.error('Error marking all as read:', error);
+            }
+        }
+
+        // Load notifications on page load and periodically refresh
+        document.addEventListener('DOMContentLoaded', function() {
+            loadNotifications();
+            setInterval(loadNotifications, 30000); // Refresh every 30 seconds
+        });
+        {% endif %}
+    </script>
+
+    <!-- Floating AI Chatbot Widget -->
+    <div id="floatingChatbot" class="floating-chatbot">
+        <div id="chatbotToggle" class="chatbot-toggle">
+            <i class="bi bi-robot"></i>
+        </div>
+        <div id="chatbotWindow" class="chatbot-window">
+            <div class="chatbot-header">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="chatbot-avatar">
+                        <i class="bi bi-robot"></i>
+                    </div>
+                    <div>
+                        <h6 class="mb-0">AI Loan Assistant</h6>
+                        <small class="text-success"><i class="bi bi-circle-fill me-1" style="font-size: 6px;"></i>Online</small>
+                    </div>
+                </div>
+                <button id="closeChatbot" class="btn btn-sm btn-link text-white p-0">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+            <div id="chatbotMessages" class="chatbot-messages">
+                <div class="chatbot-message bot-message">
+                    <div class="message-bubble">
+                        Hello! 👋 I'm your AI Loan Assistant. Ask me anything about loans, EMI, credit scores, or documentation.
+                    </div>
+                </div>
+            </div>
+            <div class="chatbot-input-area">
+                <div class="chatbot-input-wrapper">
+                    <input type="text" id="chatbotInput" placeholder="Type your question..." autocomplete="off">
+                    <button id="chatbotSend" class="chatbot-send-btn">
+                        <i class="bi bi-send-fill"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .floating-chatbot {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 9999;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .chatbot-toggle {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 8px 30px rgba(6, 182, 212, 0.4);
+            transition: all 0.3s ease;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .chatbot-toggle:hover {
+            transform: scale(1.1);
+            box-shadow: 0 12px 40px rgba(6, 182, 212, 0.5);
+        }
+
+        .chatbot-window {
+            position: absolute;
+            bottom: 80px;
+            right: 0;
+            width: 380px;
+            height: 520px;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5);
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chatbot-window.active {
+            display: flex;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .chatbot-header {
+            padding: 16px 20px;
+            background: rgba(30, 41, 59, 0.8);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .chatbot-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.1rem;
+        }
+
+        .chatbot-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .chatbot-message {
+            display: flex;
+            gap: 10px;
+        }
+
+        .chatbot-message.user-message {
+            flex-direction: row-reverse;
+        }
+
+        .message-bubble {
+            max-width: 80%;
+            padding: 12px 16px;
+            border-radius: 16px;
+            font-size: 0.9rem;
+            line-height: 1.5;
+ word-wrap: break-word;
+        }
+
+        .bot-message .message-bubble {
+            background: rgba(30, 41, 59, 0.9);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            border-bottom-left-radius: 4px;
+        }
+
+        .user-message .message-bubble {
+            background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .chatbot-input-area {
+            padding: 16px 20px;
+            background: rgba(30, 41, 59, 0.8);
+            border-top: 1px solid var(--border-color);
+        }
+
+        .chatbot-input-wrapper {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .chatbot-input-wrapper input {
+            flex: 1;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid var(--border-color);
+            border-radius: 25px;
+            padding: 12px 20px;
+            color: white;
+            font-size: 0.9rem;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .chatbot-input-wrapper input:focus {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1);
+        }
+
+        .chatbot-input-wrapper input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .chatbot-send-btn {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
+            border: none;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        .chatbot-send-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .chatbot-send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 8px 12px;
+        }
+
+        .typing-indicator span {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent-primary);
+            animation: typing 1.4s infinite ease-in-out;
+        }
+
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0%, 100% {
+                transform: translateY(0);
+                opacity: 0.4;
+            }
+            50% {
+                transform: translateY(-8px);
+                opacity: 1;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .chatbot-window {
+                width: 320px;
+                right: -20px;
+                bottom: 70px;
+            }
+
+            .floating-chatbot {
+                right: 20px;
+                bottom: 20px;
+            }
+        }
+    </style>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const chatbotToggle = document.getElementById('chatbotToggle');
+            const chatbotWindow = document.getElementById('chatbotWindow');
+            const closeChatbot = document.getElementById('closeChatbot');
+            const chatbotInput = document.getElementById('chatbotInput');
+            const chatbotSend = document.getElementById('chatbotSend');
+            const chatbotMessages = document.getElementById('chatbotMessages');
+
+            let isChatbotOpen = false;
+
+            chatbotToggle.addEventListener('click', function() {
+                isChatbotOpen = !isChatbotOpen;
+                chatbotWindow.classList.toggle('active', isChatbotOpen);
+                if (isChatbotOpen) {
+                    chatbotInput.focus();
+                }
+            });
+
+            closeChatbot.addEventListener('click', function() {
+                isChatbotOpen = false;
+                chatbotWindow.classList.remove('active');
+            });
+
+            function addMessage(content, isUser = false) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `chatbot-message ${isUser ? 'user-message' : 'bot-message'}`;
+                
+                const bubble = document.createElement('div');
+                bubble.className = 'message-bubble';
+                bubble.textContent = content;
+                
+                messageDiv.appendChild(bubble);
+                chatbotMessages.appendChild(messageDiv);
+                chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
+            }
+
+            function showTyping() {
+                const typingDiv = document.createElement('div');
+                typingDiv.id = 'typingIndicator';
+                typingDiv.className = 'chatbot-message bot-message';
+                typingDiv.innerHTML = '<div class="message-bubble"><div class="typing-indicator"><span></span><span></span><span></span></div></div>';
+                chatbotMessages.appendChild(typingDiv);
+                chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
+            }
+
+            function removeTyping() {
+                const typing = document.getElementById('typingIndicator');
+                if (typing) typing.remove();
+            }
+
+            async function sendMessage() {
+                const message = chatbotInput.value.trim();
+                if (!message) return;
+
+                addMessage(message, true);
+                chatbotInput.value = '';
+                showTyping();
+
+                try {
+                    const response = await fetch('/api/chat', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ message: message })
+                    });
+                    const data = await response.json();
+                    removeTyping();
+                    addMessage(data.reply || 'I apologize, but I could not process your request at this time.', false);
+                } catch (error) {
+                    removeTyping();
+                    addMessage('I apologize, but I am currently unable to connect to the AI service. Please try again later.', false);
+                }
+            }
+
+            if (chatbotSend) chatbotSend.addEventListener('click', sendMessage);
+            if (chatbotInput) {
+                chatbotInput.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        sendMessage();
+                    }
+                });
+            }
+
+            // Initialize Notifications for Authenticated Users
+            if (document.getElementById('notificationBadge')) {
+                loadNotifications();
+                setInterval(loadNotifications, 8000);
+            }
+        });
+
+        async function loadNotifications() {
+            try {
+                const response = await fetch('/api/notifications');
+                const data = await response.json();
+                if (data.status === 'success') {
+                    const notifications = data.notifications || [];
+                    const unreadCount = data.unread_count !== undefined ? data.unread_count : notifications.filter(n => !n.is_read).length;
+                    
+                    const badge = document.getElementById('notificationBadge');
+                    const unreadPill = document.getElementById('unreadCountPill');
+                    
+                    if (badge) {
+                        if (unreadCount > 0) {
+                            badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
+                            badge.style.display = 'inline-block';
+                        } else {
+                            badge.style.display = 'none';
+                        }
+                    }
+
+                    if (unreadPill) {
+                        if (unreadCount > 0) {
+                            unreadPill.textContent = `${unreadCount} New`;
+                            unreadPill.style.display = 'inline-block';
+                        } else {
+                            unreadPill.style.display = 'none';
+                        }
+                    }
+                    
+                    const container = document.getElementById('notificationsList');
+                    if (!container) return;
+
+                    if (notifications.length === 0) {
+                        container.innerHTML = `
+                            <div class="p-4 text-center text-muted">
+                                <i class="bi bi-bell-slash fs-3 mb-2 opacity-50 d-block"></i>
+                                <div class="small fw-semibold text-white">No notifications yet</div>
+                                <div class="small text-secondary mt-1">Updates on your loan applications will appear here.</div>
+                            </div>
+                        `;
+                        return;
+                    }
+                    
+                    container.innerHTML = notifications.map(n => {
+                        let iconClass = 'bi-bell-fill text-info';
+                        let iconBg = 'bg-info bg-opacity-15';
+                        const type = (n.notification_type || n.title || '').toLowerCase();
+                        
+                        if (type.includes('approved') || type.includes('completed')) {
+                            iconClass = 'bi-check-circle-fill text-success';
+                            iconBg = 'bg-success bg-opacity-15';
+                        } else if (type.includes('reject') || type.includes('correction') || type.includes('declined')) {
+                            iconClass = 'bi-exclamation-triangle-fill text-danger';
+                            iconBg = 'bg-danger bg-opacity-15';
+                        } else if (type.includes('chat') || type.includes('message') || type.includes('reply')) {
+                            iconClass = 'bi-chat-dots-fill text-warning';
+                            iconBg = 'bg-warning bg-opacity-15';
+                        } else if (type.includes('document') || type.includes('upload')) {
+                            iconClass = 'bi-file-earmark-text-fill text-info';
+                            iconBg = 'bg-info bg-opacity-15';
+                        }
+
+                        return `
+                            <div class="notification-item p-3 border-bottom border-secondary border-opacity-25 d-flex gap-3 align-items-start ${n.is_read ? 'read-item' : 'unread-item'}" 
+                                 onclick="markSingleRead(${n.id})" 
+                                 style="cursor: pointer; transition: all 0.2s ease; ${n.is_read ? 'opacity: 0.75;' : 'background: rgba(56, 189, 248, 0.08); border-left: 3px solid #38bdf8 !important;'}">
+                                <div class="rounded-circle p-2 d-flex align-items-center justify-content-center flex-shrink-0 ${iconBg}" style="width: 36px; height: 36px;">
+                                    <i class="bi ${iconClass} fs-6"></i>
+                                </div>
+                                <div class="flex-grow-1 min-w-0">
+                                    <div class="d-flex justify-content-between align-items-baseline mb-1">
+                                        <span class="fw-bold text-white small text-truncate" style="max-width: 180px;">${n.title || 'Notification'}</span>
+                                        <span class="text-muted" style="font-size: 0.68rem;">${n.created_at_formatted || 'Recently'}</span>
+                                    </div>
+                                    <p class="mb-0 text-secondary small" style="font-size: 0.775rem; line-height: 1.4;">${n.message || ''}</p>
+                                </div>
+                                ${!n.is_read ? '<span class="unread-dot rounded-circle bg-info flex-shrink-0 mt-1" style="width: 7px; height: 7px; box-shadow: 0 0 8px #38bdf8;"></span>' : ''}
+                            </div>
+                        `;
+                    }).join('');
+                }
+            } catch (e) {
+                console.error('Notification error:', e);
+            }
+        }
+
+        async function markAllRead() {
+            try {
+                await fetch('/api/notifications/mark-read', { method: 'POST' });
+                loadNotifications();
+            } catch(e) {}
+        }
+
+        async function markSingleRead(id) {
+            try {
+                await fetch(`/api/notifications/${id}/read`, { method: 'POST' });
+                loadNotifications();
+            } catch(e) {}
+        }
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
+

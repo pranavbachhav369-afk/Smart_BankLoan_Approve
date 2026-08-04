@@ -1,0 +1,279 @@
+{% extends "base.html" %}
+
+{% block title %}AI Loan Assistant - Chatbot Workspace{% endblock %}
+{% block page_title %}AI Financial Assistant Workspace{% endblock %}
+
+{% block extra_css %}
+<style>
+.chat-workspace-card {
+    background: rgba(30, 41, 59, 0.65);
+    backdrop-filter: blur(16px);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+}
+.chat-body-area {
+    height: 480px;
+    overflow-y: auto;
+    padding: 1.5rem;
+    background: rgba(15, 23, 42, 0.5);
+}
+.bot-avatar-badge {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.1rem;
+    box-shadow: 0 0 12px rgba(6, 182, 212, 0.3);
+    flex-shrink: 0;
+}
+.user-avatar-badge {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: rgba(51, 65, 85, 0.8);
+    border: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #f8fafc;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+.msg-bubble {
+    padding: 12px 18px;
+    border-radius: 14px;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    max-width: 85%;
+    box-shadow: var(--shadow-sm);
+}
+.bot-msg-bubble {
+    background: rgba(30, 41, 59, 0.9);
+    border: 1px solid var(--border-color);
+    color: #f8fafc;
+}
+.user-msg-bubble {
+    background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
+    color: white;
+}
+.prompt-chip {
+    background: rgba(30, 41, 59, 0.6);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 0.775rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+.prompt-chip:hover {
+    background: rgba(6, 182, 212, 0.15);
+    border-color: var(--accent-primary);
+    color: #60a5fa;
+    transform: translateY(-2px);
+}
+.typing-dots span {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent-primary);
+    animation: typing 1.4s infinite ease-in-out;
+    margin: 0 2px;
+}
+.typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+.typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes typing {
+    0%, 100% { transform: translateY(0); opacity: 0.4; }
+    50% { transform: translateY(-4px); opacity: 1; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="py-2">
+    <div class="row justify-content-center">
+        <div class="col-lg-9">
+            <div class="chat-workspace-card">
+                <div class="d-flex align-items-center justify-content-between p-3 border-bottom border-secondary border-opacity-25" style="background: rgba(15, 23, 42, 0.8);">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="bot-avatar-badge">
+                            <i class="bi bi-robot"></i>
+                        </div>
+                        <div>
+                            <h6 class="fw-bold text-white mb-0">LoanPredict AI Assistant</h6>
+                            <span class="badge bg-success text-success-light" style="font-size: 0.65rem;">
+                                <i class="bi bi-circle-fill me-1" style="font-size: 0.45rem;"></i>Active & Ready
+                            </span>
+                        </div>
+                    </div>
+                    <button class="btn btn-sm btn-outline-secondary text-secondary" onclick="clearChat()" title="Reset Conversation">
+                        <i class="bi bi-trash3 me-1"></i>Reset Chat
+                    </button>
+                </div>
+
+                <!-- Messages Container -->
+                <div id="chatContainer" class="chat-body-area">
+                    <div class="chat-message bot-msg mb-4">
+                        <div class="d-flex align-items-start gap-3">
+                            <div class="bot-avatar-badge">
+                                <i class="bi bi-robot"></i>
+                            </div>
+                            <div>
+                                <div class="msg-bubble bot-msg-bubble">
+                                    Hello! 👋 I am your <strong>LoanPredict AI Financial Assistant</strong>. I can assist you with:
+                                    <ul class="mb-0 mt-2 text-secondary ps-3">
+                                        <li>Loan eligibility & CIBIL score guidelines</li>
+                                        <li>Interest rate comparison across loan categories</li>
+                                        <li>Required documentation checklist</li>
+                                        <li>EMI structure & repayment strategies</li>
+                                    </ul>
+                                </div>
+                                <div class="text-muted small mt-1 ps-1" style="font-size: 0.7rem;">System Bot • Just now</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Input Controls -->
+                <div class="p-3 border-top border-secondary border-opacity-25" style="background: rgba(15, 23, 42, 0.7);">
+                    <div class="mb-3">
+                        <div class="text-muted small mb-2 fw-semibold">Suggested Quick Questions:</div>
+                        <div class="d-flex flex-wrap gap-2">
+                            <button class="prompt-chip" onclick="sendQuickPrompt('What documents do I need to apply for a loan?')">
+                                📋 Required Documents
+                            </button>
+                            <button class="prompt-chip" onclick="sendQuickPrompt('How is EMI calculated and what is the formula?')">
+                                🧮 How EMI is calculated
+                            </button>
+                            <button class="prompt-chip" onclick="sendQuickPrompt('How can I improve my loan approval probability?')">
+                                💡 Improve approval chances
+                            </button>
+                            <button class="prompt-chip" onclick="sendQuickPrompt('What CIBIL credit score is required for approval?')">
+                                📊 Minimum CIBIL Score
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <input type="text" id="userInput" class="form-control" placeholder="Ask anything about loans, EMI, credit score, or documentation..." autocomplete="off">
+                        <button class="btn btn-primary px-4 d-flex align-items-center gap-2" id="sendBtn">
+                            <span>Send</span>
+                            <i class="bi bi-send-fill"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const chatContainer = document.getElementById('chatContainer');
+    const userInput = document.getElementById('userInput');
+    const sendBtn = document.getElementById('sendBtn');
+
+    function appendMessage(content, isUser = false) {
+        const msgDiv = document.createElement('div');
+        msgDiv.className = `chat-message ${isUser ? 'user-msg' : 'bot-msg'} mb-4`;
+
+        const avatar = isUser ?
+            '<div class="user-avatar-badge"><i class="bi bi-person-fill"></i></div>' :
+            '<div class="bot-avatar-badge"><i class="bi bi-robot"></i></div>';
+
+        const bubbleClass = isUser ? 'user-msg-bubble' : 'bot-msg-bubble';
+        const alignClass = isUser ? 'flex-row-reverse' : '';
+        const textAlign = isUser ? 'text-end' : '';
+        const safeContent = isUser ? content : content.replace(/\n/g, '<br>');
+
+        msgDiv.innerHTML = `
+            <div class="d-flex align-items-start gap-3 ${alignClass}">
+                ${avatar}
+                <div class="${textAlign}" style="max-width: 80%;">
+                    <div class="msg-bubble ${bubbleClass}" style="white-space: pre-wrap;">
+                        ${safeContent}
+                    </div>
+                    <div class="text-muted small mt-1 px-1" style="font-size: 0.7rem;">${isUser ? 'You' : 'LoanPredict AI'} • Just now</div>
+                </div>
+            </div>
+        `;
+
+        chatContainer.appendChild(msgDiv);
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    function showTypingIndicator() {
+        const typingDiv = document.createElement('div');
+        typingDiv.id = 'typingIndicator';
+        typingDiv.className = 'chat-message bot-msg mb-3';
+        typingDiv.innerHTML = `
+            <div class="d-flex align-items-center gap-3">
+                <div class="bot-avatar-badge"><i class="bi bi-robot"></i></div>
+                <div class="msg-bubble bot-msg-bubble py-2">
+                    <div class="typing-dots"><span></span><span></span><span></span></div>
+                </div>
+            </div>
+        `;
+        chatContainer.appendChild(typingDiv);
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    function removeTypingIndicator() {
+        const el = document.getElementById('typingIndicator');
+        if (el) el.remove();
+    }
+
+    async function handleSend() {
+        const text = userInput.value.trim();
+        if (!text) return;
+
+        appendMessage(text, true);
+        userInput.value = '';
+        showTypingIndicator();
+
+        try {
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: text })
+            });
+            const data = await response.json();
+            removeTypingIndicator();
+            appendMessage(data.reply || 'I am unable to respond at the moment.', false);
+        } catch (error) {
+            removeTypingIndicator();
+            appendMessage('I am unable to reach the assistant right now. Please try again in a moment.', false);
+        }
+    }
+
+    sendBtn.addEventListener('click', () => handleSend());
+    userInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleSend();
+        }
+    });
+
+    window.sendQuickPrompt = function(promptText) {
+        userInput.value = promptText;
+        handleSend();
+    };
+
+    window.clearChat = function() {
+        chatContainer.innerHTML = '';
+        appendMessage('Hello! 👋 Conversation reset. How can I assist with your loan queries today?', false);
+    };
+});
+
+</script>
+{% endblock %}
