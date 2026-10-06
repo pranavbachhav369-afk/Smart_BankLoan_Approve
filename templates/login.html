@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+
+{% block title %}Sign In - Loan Approval Prediction Portal{% endblock %}
+{% block page_title %}Account Sign In{% endblock %}
+
+{% block extra_css %}
+<style>
+.auth-glass-card {
+    background: rgba(30, 41, 59, 0.7);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    padding: 2.5rem;
+    box-shadow: var(--shadow-lg);
+}
+
+.captcha-container {
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 0.75rem;
+    transition: all 0.2s ease;
+}
+
+.captcha-container:focus-within {
+    border-color: rgba(56, 189, 248, 0.5);
+    box-shadow: 0 0 15px rgba(56, 189, 248, 0.15);
+}
+
+.captcha-img-wrapper {
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    display: inline-flex;
+    align-items: center;
+    background: #0f172a;
+    cursor: pointer;
+}
+
+.captcha-img-wrapper img {
+    height: 48px;
+    width: 170px;
+    display: block;
+    user-select: none;
+}
+
+.btn-refresh-captcha {
+    width: 44px;
+    height: 48px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.05);
+    color: #94a3b8;
+    transition: all 0.25s ease;
+}
+
+.btn-refresh-captcha:hover {
+    background: rgba(56, 189, 248, 0.15);
+    color: #38bdf8;
+    border-color: rgba(56, 189, 248, 0.4);
+}
+
+.btn-refresh-captcha.spinning i {
+    animation: captchaSpin 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes captchaSpin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.captcha-input {
+    letter-spacing: 0.2em;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-family: monospace, sans-serif;
+    font-size: 1.1rem;
+    text-align: center;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="py-4 d-flex align-items-center justify-content-center" style="min-height: 75vh;">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-6 col-lg-5">
+                <div class="auth-glass-card">
+                    <div class="text-center mb-4">
+                        <div class="sidebar-brand-icon mx-auto mb-3" style="width: 56px; height: 56px;">
+                            <i class="bi bi-shield-lock-fill fs-3"></i>
+                        </div>
+                        <h4 class="fw-bold text-white mb-1">Welcome Back</h4>
+                        <p class="text-secondary small">Sign in to your LoanPredict dashboard account</p>
+                    </div>
+
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+
+                    <form method="POST" action="{{ url_for('login') }}" class="needs-validation" novalidate>
+                        <div class="mb-3">
+                            <label for="username" class="form-label text-secondary small fw-semibold">Username</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-dark border-end-0 text-muted"><i class="bi bi-person"></i></span>
+                                <input type="text" class="form-control border-start-0" id="username" name="username" 
+                                       placeholder="Enter your username" required autocomplete="username">
+                            </div>
+                            <div class="invalid-feedback">Please enter your username</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="password" class="form-label text-secondary small fw-semibold">Password</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-dark border-end-0 text-muted"><i class="bi bi-key"></i></span>
+                                <input type="password" class="form-control border-start-0" id="password" name="password" 
+                                       placeholder="Enter your password" required autocomplete="current-password">
+                            </div>
+                            <div class="invalid-feedback">Please enter your password</div>
+                        </div>
+
+                        <!-- CAPTCHA Verification Section -->
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label for="captcha" class="form-label text-secondary small fw-semibold mb-0">
+                                    <i class="bi bi-shield-check text-info me-1"></i>Security Verification
+                                </label>
+                                <span class="badge bg-dark text-muted border border-secondary border-opacity-25" style="font-size: 0.7rem;">Bot Protection</span>
+                            </div>
+
+                            <div class="captcha-container">
+                                <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+                                    <div class="captcha-img-wrapper flex-grow-1" id="captcha-img-box" title="Click to refresh CAPTCHA">
+                                        <img src="{{ url_for('captcha_image') }}" id="captcha-img" alt="Security CAPTCHA" class="w-100 object-fit-cover">
+                                    </div>
+                                    <button type="button" class="btn-refresh-captcha flex-shrink-0" id="refresh-captcha-btn" title="Refresh CAPTCHA code" aria-label="Refresh CAPTCHA">
+                                        <i class="bi bi-arrow-clockwise fs-5"></i>
+                                    </button>
+                                </div>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text bg-dark border-end-0 text-muted"><i class="bi bi-fonts"></i></span>
+                                    <input type="text" class="form-control border-start-0 captcha-input" id="captcha" name="captcha" 
+                                           placeholder="Enter code above" maxlength="6" required autocomplete="off" autocorrect="off" autocapitalize="characters">
+                                </div>
+                                <div class="invalid-feedback">Please enter the security verification code</div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100 py-2.5 fw-bold mb-3 d-flex align-items-center justify-content-center gap-2 shadow-sm">
+                            <i class="bi bi-box-arrow-in-right"></i>
+                            <span>Sign In to Dashboard</span>
+                        </button>
+
+                        <div class="text-center">
+                            <p class="text-secondary small mb-0">Don't have an account? 
+                                <a href="{{ url_for('register') }}" class="text-info fw-semibold text-decoration-none ms-1">Create an Account</a>
+                            </p>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const captchaImg = document.getElementById('captcha-img');
+    const refreshBtn = document.getElementById('refresh-captcha-btn');
+    const captchaImgBox = document.getElementById('captcha-img-box');
+    const captchaInput = document.getElementById('captcha');
+
+    function refreshCaptcha() {
+        if (!captchaImg) return;
+        if (refreshBtn) {
+            refreshBtn.classList.add('spinning');
+            setTimeout(() => refreshBtn.classList.remove('spinning'), 600);
+        }
+        captchaImg.src = "{{ url_for('captcha_image') }}?t=" + new Date().getTime();
+        if (captchaInput) {
+            captchaInput.value = '';
+            captchaInput.focus();
+        }
+    }
+
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            refreshCaptcha();
+        });
+    }
+
+    if (captchaImgBox) {
+        captchaImgBox.addEventListener('click', function(e) {
+            e.preventDefault();
+            refreshCaptcha();
+        });
+    }
+
+    form.addEventListener('submit', function(e) {
+        if (!form.checkValidity()) {
+            e.preventDefault();
+            e.stopPropagation();
+            form.classList.add('was-validated');
+        }
+    });
+});
+</script>
+{% endblock %}

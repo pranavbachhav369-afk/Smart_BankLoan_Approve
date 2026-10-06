@@ -1,0 +1,1289 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Loan Approval Prediction{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<style>
+    #trendChartScrollWrapper {
+        scrollbar-width: thin;
+        scrollbar-color: rgba(6, 182, 212, 0.45) rgba(15, 23, 42, 0.6);
+        user-select: none;
+    }
+    #trendChartScrollWrapper::-webkit-scrollbar {
+        height: 8px;
+    }
+    #trendChartScrollWrapper::-webkit-scrollbar-track {
+        background: rgba(15, 23, 42, 0.6);
+        border-radius: 6px;
+    }
+    #trendChartScrollWrapper::-webkit-scrollbar-thumb {
+        background: linear-gradient(90deg, rgba(6, 182, 212, 0.6), rgba(59, 130, 246, 0.6));
+        border-radius: 6px;
+        border: 1px solid rgba(6, 182, 212, 0.3);
+    }
+    #trendChartScrollWrapper::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(90deg, rgba(6, 182, 212, 0.9), rgba(59, 130, 246, 0.9));
+    }
+</style>
+<div class="home-video-bg">
+    <video class="home-video-bg__video" autoplay muted loop playsinline>
+        <source src="{{ url_for('static', filename='media/screenrecorder.mp4') }}" type="video/mp4">
+        Your browser does not support the background video.
+    </video>
+    <div class="home-video-bg__overlay"></div>
+</div>
+<div class="home-page-content">
+    <section class="hero-landing">
+        <div class="hero-copy">
+            <div class="hero-tagline">
+                <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25">AI Loan Intelligence</span>
+                <span>Instant predictions, modern finance.</span>
+            </div>
+            <h1 class="hero-title">Elevate every loan decision with AI-powered clarity.</h1>
+            <p class="hero-subtitle">Predict approval outcomes in seconds, reduce risk with intelligent scoring, and empower teams with a sleek, modern loan underwriting experience.</p>
+            <div class="hero-actions">
+                <a href="/predict" class="btn btn-hero btn-primary">Launch Prediction</a>
+                <a href="/contact" class="btn btn-hero btn-secondary">Talk to Sales</a>
+            </div>
+            <div class="hero-meta">
+                Trusted by finance teams for accurate loan insights, faster decisions, and smoother customer journeys.
+            </div>
+        </div>
+        <!-- Right-side stacked KPI cards (part of layout, scrolls naturally) -->
+        <aside class="right-card-stack" aria-hidden="false">
+            <div class="kpi-card card kpi-card-purple" id="card-total">
+                <h6>Total Loan Predictions</h6>
+                <div class="kpi-value" id="card-total-value">{{ stats.total_predictions }}</div>
+                <div class="kpi-mini">live database count</div>
+            </div>
+
+            <div class="kpi-card card kpi-card-blue" id="card-approval">
+                <h6>Approval Rate</h6>
+                <div class="kpi-value" id="card-approval-value">{{ stats.approval_rate }}%</div>
+                <div class="mini-chart-card holo-chart" style="margin-top:12px;">
+                    <canvas id="homeApprovalChart" style="width:100%;height:140px;"></canvas>
+                </div>
+            </div>
+
+            <div class="kpi-card card kpi-card-green" id="card-risk">
+                <h6>Risk Detection Rate</h6>
+                <div class="kpi-value" id="card-risk-value">{{ stats.risk_detection_rate }}%</div>
+                <div class="kpi-mini">from live predictions</div>
+            </div>
+
+            <div class="kpi-card card kpi-card-orange" id="card-activity">
+                <h6>Monthly Activity</h6>
+                <div class="kpi-value" id="card-activity-value">{{ stats.monthly_predictions }}</div>
+                <div class="mini-chart-card holo-chart" style="margin-top:12px;">
+                    <canvas id="homeActivityChart" style="width:100%;height:96px;"></canvas>
+                </div>
+            </div>
+        </aside>
+    </section>
+    <section class="analytics-section">
+        <div class="analytics-panel">
+            <div class="analytics-card analytics-hero-card glass-card">
+                <div class="analytics-card-header analytics-hero-header flex-wrap gap-3 align-items-center justify-content-between mb-3">
+                    <div>
+                        <h5 class="section-title mb-1">📈 Daily Loan Decisions (Approved vs Rejected)</h5>
+                        <p class="section-subtitle mb-0">Interactive movable timeline spanning past days, today, and upcoming dates into next month.</p>
+                    </div>
+                    <div class="d-flex align-items-center flex-wrap gap-2">
+                        <!-- Live Today Decision Badges -->
+                        <div class="d-flex align-items-center gap-2 px-3 py-1.5 rounded-pill" style="background: rgba(34, 197, 94, 0.12); border: 1px solid rgba(34, 197, 94, 0.3);">
+                            <i class="bi bi-check-circle-fill text-success" style="font-size: 0.85rem;"></i>
+                            <span class="text-secondary small fw-semibold">Today Approved:</span>
+                            <span class="text-success fw-bold" id="todayApprovedBadge">0</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2 px-3 py-1.5 rounded-pill" style="background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.3);">
+                            <i class="bi bi-x-circle-fill text-danger" style="font-size: 0.85rem;"></i>
+                            <span class="text-secondary small fw-semibold">Today Rejected:</span>
+                            <span class="text-danger fw-bold" id="todayRejectedBadge">0</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2 px-3 py-1.5 rounded-pill" style="background: rgba(6, 182, 212, 0.12); border: 1px solid rgba(6, 182, 212, 0.3);">
+                            <i class="bi bi-lightning-charge-fill text-info" style="font-size: 0.85rem;"></i>
+                            <span class="text-secondary small fw-semibold">Today Total:</span>
+                            <span class="text-info fw-bold" id="todayTotalBadge">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Movable Navigation Toolbar -->
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 px-3 py-2 mb-3 rounded-3" style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.08);">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="text-secondary small fw-semibold"><i class="bi bi-arrows-expand-vertical text-info me-1" style="transform: rotate(90deg); display: inline-block;"></i> Timeline Navigation:</span>
+                        <div class="btn-group btn-group-sm" role="group">
+                            <button type="button" class="btn btn-outline-secondary px-2.5 py-1 text-white small" id="btnScrollLeft" title="Scroll left to earlier dates">
+                                <i class="bi bi-chevron-left me-1"></i> Earlier
+                            </button>
+                            <button type="button" class="btn btn-outline-info px-3 py-1 fw-bold small" id="btnScrollToday" title="Jump to Today's position">
+                                <i class="bi bi-crosshair2 text-info me-1"></i> Jump to Today
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary px-2.5 py-1 text-white small" id="btnScrollRight" title="Scroll right to increasing dates and next month">
+                                Next Month / Dates <i class="bi bi-chevron-right ms-1"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="text-muted small d-none d-md-inline" style="font-size: 0.78rem;">
+                            <i class="bi bi-info-circle me-1"></i> Drag or use buttons to move timeline
+                        </span>
+                        <!-- Chart Style Toggle -->
+                        <div class="btn-group btn-group-sm" role="group" aria-label="Chart View Mode">
+                            <button type="button" class="btn btn-outline-info active" id="btnChartBars" title="Grouped Bar View">
+                                <i class="bi bi-bar-chart-fill me-1"></i> Bars
+                            </button>
+                            <button type="button" class="btn btn-outline-info" id="btnChartLines" title="Trend Line View">
+                                <i class="bi bi-graph-up me-1"></i> Lines
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Horizontal Movable / Scrollable Graph Wrapper -->
+                <div class="analytics-chart-wrapper analytics-fullwidth-chart p-0" id="trendChartScrollWrapper" 
+                     style="overflow-x: auto; overflow-y: hidden; scroll-behavior: smooth; cursor: grab; padding-bottom: 24px; border-radius: 12px;">
+                    <div id="trendChartInnerWrapper" style="min-width: 1600px; height: 380px; position: relative;">
+                        <canvas id="approvalTrendChart"></canvas>
+                    </div>
+                </div>
+                <div class="row g-4 mt-3">
+                    <div class="col-md-6">
+                        <div class="card glass-card" style="background: transparent !important;">
+                            <div class="card-body" style="background: transparent !important;">
+                                <h6 class="text-white mb-3" style="font-weight: 700; text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);">Overall Approval vs Rejection</h6>
+                                <div style="height: 200px;">
+                                    <canvas id="approvalPieChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card glass-card" style="background: transparent !important;">
+                            <div class="card-body" style="background: transparent !important;">
+                                <h6 class="text-white mb-3" style="font-weight: 700; text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);">Daily Prediction Volume (Timeline)</h6>
+                                <div style="height: 200px;">
+                                    <canvas id="dailyVolumeChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="analytics-summary-grid">
+                    <div class="summary-card card summary-approved glass-card">
+                        <div class="summary-label">✔ Total Approved (All-Time)</div>
+                        <div class="summary-value"><span id="approvedSummaryValue">0%</span></div>
+                        <div class="summary-meta positive" id="approvedSummaryCount">0 Approved Loans</div>
+                    </div>
+                    <div class="summary-card card summary-rejected glass-card">
+                        <div class="summary-label">✖ Total Rejected (All-Time)</div>
+                        <div class="summary-value"><span id="rejectedSummaryValue">0%</span></div>
+                        <div class="summary-meta negative" id="rejectedSummaryCount">0 Rejected Loans</div>
+                    </div>
+                    <div class="summary-card card summary-accuracy glass-card" style="border-left: 3px solid #06b6d4;">
+                        <div class="summary-label">📅 Today's Decisions</div>
+                        <div class="summary-value text-info"><span id="todayDecisionsSummaryValue">0</span></div>
+                        <div class="summary-meta" id="todaySummarySubtext" style="color: #38bdf8;">0 Approved • 0 Rejected</div>
+                    </div>
+                    <div class="summary-card card summary-total glass-card">
+                        <div class="summary-label">📊 All-Time Total Predictions</div>
+                        <div class="summary-value"><span id="totalPredictionsSummaryValue">0</span></div>
+                        <div class="summary-meta text-muted">Across all applications</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ML-Only AI Insights Section -->
+    <section class="analytics-section mt-4">
+        <div class="analytics-panel">
+            <div class="analytics-card analytics-hero-card glass-card">
+                <div class="analytics-card-header analytics-hero-header">
+                    <div>
+                        <h5 class="section-title">🤖 ML Prediction Insights</h5>
+                        <p class="section-subtitle">Risk distribution, probability trends, and financial analysis computed only from ML predictions.</p>
+                    </div>
+                    <div class="analytics-header-meta">
+                        <span class="analytics-status-pill"><span class="status-dot"></span> AI Analytics</span>
+                        <span class="analytics-badge">ML Data</span>
+                    </div>
+                </div>
+                <div class="row g-4 mt-1">
+                    <div class="col-md-6">
+                        <div class="card glass-card" style="background: transparent !important;">
+                            <div class="card-body" style="background: transparent !important;">
+                                <h6 class="text-white mb-3" style="font-weight: 700;">Risk Distribution</h6>
+                                <div style="height: 220px;">
+                                    <canvas id="riskDistributionChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card glass-card" style="background: transparent !important;">
+                            <div class="card-body" style="background: transparent !important;">
+                                <h6 class="text-white mb-3" style="font-weight: 700;">Approval Probability Trend</h6>
+                                <div style="height: 220px;">
+                                    <canvas id="probabilityTrendChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card glass-card" style="background: transparent !important;">
+                            <div class="card-body" style="background: transparent !important;">
+                                <h6 class="text-white mb-3" style="font-weight: 700;">Income Analysis (Avg ₹)</h6>
+                                <div style="height: 220px;">
+                                    <canvas id="incomeAnalysisChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card glass-card" style="background: transparent !important;">
+                            <div class="card-body" style="background: transparent !important;">
+                                <h6 class="text-white mb-3" style="font-weight: 700;">Credit Score Analysis</h6>
+                                <div style="height: 220px;">
+                                    <canvas id="creditAnalysisChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Recent Activity Section -->
+    <section class="recent-activity-section py-4">
+        <div class="container">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center" style="background: rgba(15, 23, 42, 0.8); border-bottom: 1px solid var(--border-color);">
+                    <h5 class="mb-0" style="color: var(--text-primary); font-weight: 700;">
+                        <i class="bi bi-clock-history me-2" style="color: var(--accent-primary);"></i>Recent Activity
+                    </h5>
+                    <span class="badge bg-success" style="font-size: 0.7rem;"><i class="bi bi-circle-fill me-1" style="font-size: 6px;"></i>Live Updates</span>
+                </div>
+                <div class="card-body" style="background: rgba(15, 23, 42, 0.5);">
+                    <div id="recentActivityList" style="max-height: 300px; overflow-y: auto;">
+                        <div class="text-center text-muted py-4">
+                            <i class="bi bi-hourglass-split fs-4 mb-2"></i>
+                            <p>Loading recent activity...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}
+
+
+{% block extra_js %}
+<script>
+(function(){
+    function animateCounter(selector, target, suffix = ''){
+        const el = document.getElementById(selector);
+        if(!el) return;
+        const duration = 900;
+        const start = 0;
+        const range = target - start;
+        const startTime = performance.now();
+        function tick(now){
+            const progress = Math.min((now - startTime) / duration, 1);
+            el.textContent = `${Math.round(start + range * progress)}${suffix}`;
+            if(progress < 1) requestAnimationFrame(tick);
+        }
+        requestAnimationFrame(tick);
+    }
+
+    function formatTime(dateString) {
+        const date = new Date(dateString);
+        return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+    }
+
+    function formatDate(dateString) {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+
+    function renderRecentActivity(activities) {
+        const container = document.getElementById('recentActivityList');
+        if (!container) return;
+
+        if (!activities || activities.length === 0) {
+            container.innerHTML = `
+                <div class="text-center text-muted py-4">
+                    <i class="bi bi-inbox fs-4 mb-2"></i>
+                    <p>No recent activity</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = activities.map(activity => {
+            const isApproved = activity.prediction_result === 'Approved';
+            const icon = isApproved ? 'bi-check-circle-fill' : 'bi-x-circle-fill';
+            const colorClass = isApproved ? 'text-success' : 'text-danger';
+            const bgClass = isApproved ? 'bg-success bg-opacity-10' : 'bg-danger bg-opacity-10';
+            const borderClass = isApproved ? 'border-success border-opacity-25' : 'border-danger border-opacity-25';
+            
+            return `
+                <div class="d-flex align-items-center gap-3 p-3 mb-2 rounded" style="background: ${bgClass}; border: 1px solid ${borderClass};">
+                    <div class="${colorClass} fs-5">
+                        <i class="bi ${icon}"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="fw-bold text-white" style="font-size: 0.9rem;">
+                            Loan ${activity.prediction_result}
+                        </div>
+                        <div class="text-muted small">
+                            Amount: ₹${activity.loan_amount?.toLocaleString() || 'N/A'} | 
+                            Confidence: ${activity.probability ? (activity.probability * 100).toFixed(1) + '%' : 'N/A'}
+                        </div>
+                    </div>
+                    <div class="text-end">
+                        <div class="text-white small fw-semibold">${formatTime(activity.created_at)}</div>
+                        <div class="text-muted" style="font-size: 0.75rem;">${formatDate(activity.created_at)}</div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function renderNotifications(notifications) {
+        const container = document.getElementById('notificationsList');
+        if (!container) return;
+
+        if (!notifications || notifications.length === 0) {
+            container.innerHTML = `
+                <div class="text-center text-muted py-4">
+                    <i class="bi bi-bell-slash fs-4 mb-2"></i>
+                    <p>No notifications</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = notifications.map(notification => {
+            const isUnread = !notification.is_read;
+            const icon = getNotificationIcon(notification.notification_type);
+            const bgClass = isUnread ? 'bg-primary bg-opacity-10' : 'bg-secondary bg-opacity-10';
+            const borderClass = isUnread ? 'border-primary border-opacity-25' : 'border-secondary border-opacity-25';
+            
+            return `
+                <div class="d-flex align-items-center gap-3 p-3 mb-2 rounded ${isUnread ? 'border-start border-4 border-primary' : ''}" style="background: ${bgClass}; border: 1px solid ${borderClass};">
+                    <div class="text-primary fs-5">
+                        <i class="bi ${icon}"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="fw-bold text-white" style="font-size: 0.9rem;">
+                            ${notification.title}
+                        </div>
+                        <div class="text-muted small">
+                            ${notification.message}
+                        </div>
+                    </div>
+                    <div class="text-end">
+                        <div class="text-white small fw-semibold">${formatTime(notification.created_at)}</div>
+                        <div class="text-muted" style="font-size: 0.75rem;">${formatDate(notification.created_at)}</div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function getNotificationIcon(type) {
+        const iconMap = {
+            'Application Submitted': 'bi-file-earmark-check',
+            'Workflow Update': 'bi-diagram-3',
+            'loan_decision': 'bi-check-circle',
+            'Documents Verification': 'bi-file-earmark-text',
+            'AI Risk Analysis': 'bi-cpu',
+            'Admin Review': 'bi-person-check',
+            'Final Decision': 'bi-check2-all'
+        };
+        return iconMap[type] || 'bi-bell';
+    }
+
+    let currentChartMode = 'bar'; // default to grouped bars for crystal-clear daily comparisons
+
+    const btnBars = document.getElementById('btnChartBars');
+    const btnLines = document.getElementById('btnChartLines');
+    const scrollWrapper = document.getElementById('trendChartScrollWrapper');
+    const btnScrollLeft = document.getElementById('btnScrollLeft');
+    const btnScrollRight = document.getElementById('btnScrollRight');
+    const btnScrollToday = document.getElementById('btnScrollToday');
+
+    function scrollTimeline(offset) {
+        if (scrollWrapper) {
+            scrollWrapper.scrollBy({ left: offset, behavior: 'smooth' });
+        }
+    }
+
+    function scrollToTodayPosition() {
+        if (!scrollWrapper) return;
+        const innerEl = document.getElementById('trendChartInnerWrapper');
+        if (!innerEl) return;
+        const items = window._currentTimelineItems || [];
+        const todayIdx = items.findIndex(it => it.is_today);
+        if (todayIdx !== -1 && items.length > 0) {
+            const itemWidth = innerEl.scrollWidth / items.length;
+            const targetLeft = Math.max(0, (todayIdx * itemWidth) - (scrollWrapper.clientWidth / 2) + (itemWidth / 2));
+            scrollWrapper.scrollTo({ left: targetLeft, behavior: 'smooth' });
+        }
+    }
+
+    if (btnScrollLeft) btnScrollLeft.addEventListener('click', () => scrollTimeline(-360));
+    if (btnScrollRight) btnScrollRight.addEventListener('click', () => scrollTimeline(360));
+    if (btnScrollToday) btnScrollToday.addEventListener('click', () => scrollToTodayPosition());
+
+    // Mouse drag-to-scroll support for fluid timeline panning
+    let isMouseDown = false;
+    let dragStartX = 0;
+    let dragStartScrollLeft = 0;
+
+    if (scrollWrapper) {
+        scrollWrapper.addEventListener('mousedown', (e) => {
+            isMouseDown = true;
+            scrollWrapper.style.cursor = 'grabbing';
+            dragStartX = e.pageX - scrollWrapper.offsetLeft;
+            dragStartScrollLeft = scrollWrapper.scrollLeft;
+        });
+        scrollWrapper.addEventListener('mouseleave', () => {
+            isMouseDown = false;
+            scrollWrapper.style.cursor = 'grab';
+        });
+        scrollWrapper.addEventListener('mouseup', () => {
+            isMouseDown = false;
+            scrollWrapper.style.cursor = 'grab';
+        });
+        scrollWrapper.addEventListener('mousemove', (e) => {
+            if (!isMouseDown) return;
+            e.preventDefault();
+            const x = e.pageX - scrollWrapper.offsetLeft;
+            const walk = (x - dragStartX) * 1.5;
+            scrollWrapper.scrollLeft = dragStartScrollLeft - walk;
+        });
+    }
+
+    if (btnBars && btnLines) {
+        btnBars.addEventListener('click', function() {
+            if (currentChartMode !== 'bar') {
+                currentChartMode = 'bar';
+                btnBars.classList.add('active');
+                btnLines.classList.remove('active');
+                fetchAndRender();
+            }
+        });
+        btnLines.addEventListener('click', function() {
+            if (currentChartMode !== 'line') {
+                currentChartMode = 'line';
+                btnLines.classList.add('active');
+                btnBars.classList.remove('active');
+                fetchAndRender();
+            }
+        });
+    }
+
+    async function fetchAndRender(){
+        try{
+            const [statsRes, activityRes, notificationsRes] = await Promise.all([
+                fetch('/api/dashboard-stats'),
+                fetch('/api/recent-activity'),
+                fetch('/api/notifications')
+            ]);
+
+            if(!statsRes.ok) throw new Error('Network error loading stats');
+            
+            const data = await statsRes.json();
+
+            const total = data.total_predictions || 0;
+            const approved = data.approved_count || 0;
+            const rejected = data.rejected_count || 0;
+            const approvalRate = data.approval_rate || 0;
+            const rejectionRate = data.rejection_rate || 0;
+            const riskRate = data.risk_detection_rate || 0;
+            const monthly = data.monthly_predictions || 0;
+            const todayTotal = data.today_predictions !== undefined ? data.today_predictions : (data.daily_predictions || 0);
+            const todayApproved = data.today_approved || 0;
+            const todayRejected = data.today_rejected || 0;
+
+            document.getElementById('card-total-value').textContent = total;
+            document.getElementById('card-approval-value').textContent = `${approvalRate.toFixed(1)}%`;
+            document.getElementById('card-risk-value').textContent = `${riskRate.toFixed(1)}%`;
+            document.getElementById('card-activity-value').textContent = monthly;
+
+            // Live Header Badges
+            const todayApprBadge = document.getElementById('todayApprovedBadge');
+            if (todayApprBadge) todayApprBadge.textContent = todayApproved;
+            const todayRejBadge = document.getElementById('todayRejectedBadge');
+            if (todayRejBadge) todayRejBadge.textContent = todayRejected;
+            const todayTotBadge = document.getElementById('todayTotalBadge');
+            if (todayTotBadge) todayTotBadge.textContent = todayTotal;
+
+            // Summary Grid Counters
+            animateCounter('approvedSummaryValue', Math.round(approvalRate), '%');
+            animateCounter('rejectedSummaryValue', Math.round(rejectionRate), '%');
+            animateCounter('todayDecisionsSummaryValue', todayTotal);
+            animateCounter('totalPredictionsSummaryValue', total);
+
+            const approvedSummaryCount = document.getElementById('approvedSummaryCount');
+            if (approvedSummaryCount) approvedSummaryCount.textContent = `${approved} Approved Loans`;
+            const rejectedSummaryCount = document.getElementById('rejectedSummaryCount');
+            if (rejectedSummaryCount) rejectedSummaryCount.textContent = `${rejected} Rejected Loans`;
+            const todaySummarySubtext = document.getElementById('todaySummarySubtext');
+            if (todaySummarySubtext) todaySummarySubtext.textContent = `${todayApproved} Approved • ${todayRejected} Rejected`;
+
+            const timelineItems = data.chart_data || [];
+            window._currentTimelineItems = timelineItems;
+            const chartLabels = timelineItems.map(item => item.display_date || item.date);
+            const chartData = chartLabels;
+            const approvedSeries = timelineItems.map(item => item.approved_count || 0);
+            const rejectedSeries = timelineItems.map(item => item.rejected_count || 0);
+
+            // Dynamically scale inner width to give ample coordinate room for dates across the timeline
+            const innerWrapper = document.getElementById('trendChartInnerWrapper');
+            if (innerWrapper) {
+                const dynamicWidth = Math.max(1600, timelineItems.length * 68);
+                innerWrapper.style.minWidth = dynamicWidth + 'px';
+                innerWrapper.style.height = '380px';
+            }
+
+            // Render Approval vs Rejection Main Chart
+            const ctx = document.getElementById('approvalTrendChart');
+            if(ctx && typeof Chart !== 'undefined'){
+                const existing = Chart.getChart(ctx);
+                if(existing) existing.destroy();
+
+                const isBar = currentChartMode === 'bar';
+                const ctx2d = ctx.getContext('2d');
+
+                // Dynamic Glowing Gradients
+                const greenGrad = ctx2d.createLinearGradient(0, 0, 0, 360);
+                greenGrad.addColorStop(0, 'rgba(34, 197, 94, 0.95)');
+                greenGrad.addColorStop(1, 'rgba(16, 185, 129, 0.12)');
+
+                const redGrad = ctx2d.createLinearGradient(0, 0, 0, 360);
+                redGrad.addColorStop(0, 'rgba(239, 68, 68, 0.95)');
+                redGrad.addColorStop(1, 'rgba(244, 63, 94, 0.12)');
+                
+                const datasets = isBar ? [
+                    {
+                        type: 'bar',
+                        label: 'Approved Loans',
+                        data: approvedSeries,
+                        backgroundColor: timelineItems.map(item => {
+                            if (item.is_today) return greenGrad;
+                            if (item.is_future) return 'rgba(34, 197, 94, 0.45)';
+                            return greenGrad;
+                        }),
+                        borderColor: '#22C55E',
+                        borderWidth: timelineItems.map(item => item.is_today ? 3 : 2),
+                        borderRadius: { topLeft: 10, topRight: 10, bottomLeft: 4, bottomRight: 4 },
+                        hoverBackgroundColor: '#22C55E',
+                        maxBarThickness: 32,
+                    },
+                    {
+                        type: 'bar',
+                        label: 'Rejected Loans',
+                        data: rejectedSeries,
+                        backgroundColor: timelineItems.map(item => {
+                            if (item.is_today) return redGrad;
+                            if (item.is_future) return 'rgba(239, 68, 68, 0.45)';
+                            return redGrad;
+                        }),
+                        borderColor: '#EF4444',
+                        borderWidth: timelineItems.map(item => item.is_today ? 3 : 2),
+                        borderRadius: { topLeft: 10, topRight: 10, bottomLeft: 4, bottomRight: 4 },
+                        hoverBackgroundColor: '#EF4444',
+                        maxBarThickness: 32,
+                    }
+                ] : [
+                    {
+                        type: 'line',
+                        label: 'Approved Loans',
+                        data: approvedSeries,
+                        borderColor: '#22C55E',
+                        backgroundColor: greenGrad,
+                        tension: 0.38,
+                        fill: true,
+                        pointRadius: timelineItems.map(item => item.is_today ? 5 : 3),
+                        pointHoverRadius: 7,
+                        pointBorderWidth: 2,
+                        pointBackgroundColor: timelineItems.map(item => item.is_today ? '#ffffff' : '#22C55E'),
+                        pointBorderColor: '#22C55E',
+                        borderWidth: 2.5,
+                    },
+                    {
+                        type: 'line',
+                        label: 'Rejected Loans',
+                        data: rejectedSeries,
+                        borderColor: '#EF4444',
+                        backgroundColor: redGrad,
+                        tension: 0.38,
+                        fill: true,
+                        pointRadius: timelineItems.map(item => item.is_today ? 5 : 3),
+                        pointHoverRadius: 7,
+                        pointBorderWidth: 2,
+                        pointBackgroundColor: timelineItems.map(item => item.is_today ? '#ffffff' : '#EF4444'),
+                        pointBorderColor: '#EF4444',
+                        borderWidth: 2.5,
+                    }
+                ];
+
+                new Chart(ctx.getContext('2d'), {
+                    type: isBar ? 'bar' : 'line',
+                    data: {
+                        labels: chartLabels,
+                        datasets: datasets
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        layout: {
+                            padding: {
+                                top: 16,
+                                bottom: 36,
+                                left: 16,
+                                right: 28
+                            }
+                        },
+                        interaction: {
+                            mode: 'index',
+                            intersect: false,
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                                labels: {
+                                    color: '#ffffff',
+                                    padding: 16,
+                                    usePointStyle: true,
+                                    font: {
+                                        size: 13,
+                                        weight: 600
+                                    }
+                                }
+                            },
+                            tooltip: {
+                                backgroundColor: 'rgba(15, 23, 42, 0.96)',
+                                titleColor: '#38bdf8',
+                                bodyColor: '#ffffff',
+                                borderColor: 'rgba(56, 189, 248, 0.4)',
+                                borderWidth: 1,
+                                padding: 14,
+                                cornerRadius: 12,
+                                displayColors: true,
+                                titleFont: { size: 14, weight: 700 },
+                                bodyFont: { size: 13 },
+                                callbacks: {
+                                    title: function(items) {
+                                        if (!items.length) return '';
+                                        const idx = items[0].dataIndex;
+                                        const item = timelineItems[idx];
+                                        if (item && item.is_today) {
+                                            return `📅 ${item.display_date} ⭐ [TODAY'S LIVE METRICS]`;
+                                        }
+                                        if (item && item.is_future) {
+                                            return `📅 ${item.display_date} 🚀 (Upcoming Date / Next Month)`;
+                                        }
+                                        return `📅 ${item ? item.display_date : items[0].label}`;
+                                    },
+                                    label: function(context) {
+                                        const val = context.parsed.y || 0;
+                                        return ` ${context.dataset.label}: ${val} ${val === 1 ? 'decision' : 'decisions'}`;
+                                    },
+                                    afterBody: function(items) {
+                                        if (!items.length) return [];
+                                        const idx = items[0].dataIndex;
+                                        const item = timelineItems[idx];
+                                        if (item) {
+                                            return [
+                                                `─────────────────────`,
+                                                `📊 Daily Total: ${item.total_count || 0}`,
+                                                `🎯 Approval Rate: ${item.approval_rate || 0}%`,
+                                                `❌ Rejection Rate: ${item.rejection_rate || 0}%`
+                                            ];
+                                        }
+                                        return [];
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                offset: true,
+                                ticks: {
+                                    autoSkip: false,
+                                    padding: 12,
+                                    maxRotation: 0,
+                                    minRotation: 0,
+                                    color: function(c) {
+                                        const item = timelineItems[c.index];
+                                        if (item && item.is_today) return '#38bdf8';
+                                        if (item && item.is_future) return '#94a3b8';
+                                        return '#ffffff';
+                                    },
+                                    font: function(c) {
+                                        const item = timelineItems[c.index];
+                                        return {
+                                            size: item && item.is_today ? 13 : 11.5,
+                                            weight: item && item.is_today ? '700' : '600'
+                                        };
+                                    },
+                                    callback: function(val, index) {
+                                        const item = timelineItems[index];
+                                        if (!item) return this.getLabelForValue(val);
+                                        const dateStr = item.short_date || '';
+                                        if (item.is_today) {
+                                            return ['⭐ TODAY', dateStr];
+                                        }
+                                        return dateStr;
+                                    }
+                                },
+                                grid: {
+                                    color: function(c) {
+                                        const item = timelineItems[c.index];
+                                        if (item && item.is_today) return 'rgba(56, 189, 248, 0.4)';
+                                        return 'rgba(255, 255, 255, 0.08)';
+                                    },
+                                    lineWidth: function(c) {
+                                        const item = timelineItems[c.index];
+                                        return item && item.is_today ? 2 : 1;
+                                    },
+                                    drawBorder: true,
+                                    borderColor: 'rgba(255, 255, 255, 0.2)'
+                                }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                suggestedMax: Math.max(...approvedSeries, ...rejectedSeries, 3) + 1,
+                                ticks: {
+                                    precision: 0,
+                                    color: 'rgba(255, 255, 255, 0.9)',
+                                    font: { size: 12, weight: '600' },
+                                    padding: 10
+                                },
+                                grid: {
+                                    color: 'rgba(255, 255, 255, 0.08)',
+                                    drawBorder: false
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'Loan Decisions',
+                                    color: '#94a3b8',
+                                    font: { size: 12, weight: 600 },
+                                    padding: { bottom: 6 }
+                                }
+                            }
+                        },
+                        animation: {
+                            duration: 600,
+                            easing: 'easeInOutQuart'
+                        }
+                    }
+                });
+
+                // Auto-center timeline viewport to Today on initial load
+                if (!window._timelineInitialized) {
+                    window._timelineInitialized = true;
+                    setTimeout(scrollToTodayPosition, 250);
+                }
+            }
+
+            const homeActivityChart = document.getElementById('homeActivityChart');
+            if(homeActivityChart && typeof Chart !== 'undefined'){
+                const existing = Chart.getChart(homeActivityChart);
+                if(existing) existing.destroy();
+                new Chart(homeActivityChart.getContext('2d'), { type:'line', data:{ labels: chartLabels, datasets:[{ data: timelineItems.map(item => item.total_count), borderColor:'#f97316', fill:true, backgroundColor:'rgba(249,115,22,0.06)', tension:0.3, pointRadius:0 }] }, options:{ responsive:false, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{display:false}, y:{display:false}} } });
+            }
+
+            // Render Pie Chart for Approval vs Rejection
+            const pieCtx = document.getElementById('approvalPieChart');
+            if(pieCtx && typeof Chart !== 'undefined'){
+                const existing = Chart.getChart(pieCtx);
+                if(existing) existing.destroy();
+                const pie2d = pieCtx.getContext('2d');
+
+                const pieGradGreen = pie2d.createLinearGradient(0, 0, 0, 200);
+                pieGradGreen.addColorStop(0, '#22C55E');
+                pieGradGreen.addColorStop(1, '#10B981');
+
+                const pieGradRed = pie2d.createLinearGradient(0, 0, 0, 200);
+                pieGradRed.addColorStop(0, '#EF4444');
+                pieGradRed.addColorStop(1, '#F43F5E');
+
+                new Chart(pie2d, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Approved', 'Rejected'],
+                        datasets: [{
+                            data: [approved, rejected],
+                            backgroundColor: [pieGradGreen, pieGradRed],
+                            borderColor: ['rgba(34, 197, 94, 0.4)', 'rgba(239, 68, 68, 0.4)'],
+                            borderWidth: 2,
+                            hoverOffset: 12,
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    color: '#ffffff',
+                                    padding: 20,
+                                    usePointStyle: true,
+                                    pointStyleWidth: 10,
+                                    font: {
+                                        size: 12,
+                                        weight: 600
+                                    }
+                                }
+                            },
+                            tooltip: {
+                                backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                                titleColor: '#38bdf8',
+                                bodyColor: '#ffffff',
+                                borderColor: 'rgba(56, 189, 248, 0.3)',
+                                borderWidth: 1,
+                                padding: 12,
+                                cornerRadius: 10
+                            }
+                        },
+                        cutout: '68%'
+                    }
+                });
+            }
+
+            // Render Daily Volume Chart
+            const volumeCtx = document.getElementById('dailyVolumeChart');
+            if(volumeCtx && typeof Chart !== 'undefined'){
+                const existing = Chart.getChart(volumeCtx);
+                if(existing) existing.destroy();
+                const vol2d = volumeCtx.getContext('2d');
+                
+                const cyanVolGrad = vol2d.createLinearGradient(0, 0, 0, 200);
+                cyanVolGrad.addColorStop(0, 'rgba(6, 182, 212, 0.95)');
+                cyanVolGrad.addColorStop(1, 'rgba(59, 130, 246, 0.2)');
+
+                const todayVolGrad = vol2d.createLinearGradient(0, 0, 0, 200);
+                todayVolGrad.addColorStop(0, 'rgba(56, 189, 248, 0.98)');
+                todayVolGrad.addColorStop(1, 'rgba(6, 182, 212, 0.4)');
+
+                new Chart(vol2d, {
+                    type: 'bar',
+                    data: {
+                        labels: chartLabels,
+                        datasets: [{
+                            label: 'Daily Predictions',
+                            data: timelineItems.map(item => item.total_count),
+                            backgroundColor: timelineItems.map(item => item.is_today ? todayVolGrad : cyanVolGrad),
+                            borderColor: '#06b6d4',
+                            borderWidth: 1.5,
+                            borderRadius: 6,
+                            hoverBackgroundColor: '#06b6d4'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                                titleColor: '#38bdf8',
+                                bodyColor: '#ffffff',
+                                borderColor: 'rgba(56, 189, 248, 0.3)',
+                                borderWidth: 1,
+                                padding: 12,
+                                cornerRadius: 10
+                            }
+                        },
+                        scales: {
+                            x: {
+                                ticks: { color: 'rgba(255,255,255,0.8)', maxRotation: 45, minRotation: 45 },
+                                grid: { display: false }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                ticks: { color: 'rgba(255,255,255,0.8)' },
+                                grid: { color: 'rgba(255,255,255,0.05)' }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Render ML Risk Distribution Chart
+            const riskDistCtx = document.getElementById('riskDistributionChart');
+            if(riskDistCtx && typeof Chart !== 'undefined'){
+                const existing = Chart.getChart(riskDistCtx);
+                if(existing) existing.destroy();
+                const risk2d = riskDistCtx.getContext('2d');
+                const riskLabels = (data.risk_distribution || []).map(item => item.label);
+                const riskCounts = (data.risk_distribution || []).map(item => item.count);
+
+                const gLow = risk2d.createLinearGradient(0, 0, 0, 200);
+                gLow.addColorStop(0, 'rgba(34, 197, 94, 0.9)');
+                gLow.addColorStop(1, 'rgba(16, 185, 129, 0.2)');
+
+                const gMed = risk2d.createLinearGradient(0, 0, 0, 200);
+                gMed.addColorStop(0, 'rgba(245, 158, 11, 0.9)');
+                gMed.addColorStop(1, 'rgba(217, 119, 6, 0.2)');
+
+                const gHigh = risk2d.createLinearGradient(0, 0, 0, 200);
+                gHigh.addColorStop(0, 'rgba(239, 68, 68, 0.9)');
+                gHigh.addColorStop(1, 'rgba(225, 29, 72, 0.2)');
+
+                new Chart(risk2d, {
+                    type: 'bar',
+                    data: {
+                        labels: riskLabels,
+                        datasets: [{
+                            label: 'Predictions',
+                            data: riskCounts,
+                            backgroundColor: [gLow, gMed, gHigh],
+                            borderColor: ['#22C55E', '#F59E0B', '#EF4444'],
+                            borderWidth: 2,
+                            borderRadius: 8
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { ticks: { color: 'rgba(255,255,255,0.8)' }, grid: { display: false } },
+                            y: { beginAtZero: true, ticks: { color: 'rgba(255,255,255,0.8)' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+                        }
+                    }
+                });
+            }
+
+            // Render ML Approval Probability Trend Chart
+            const probTrendCtx = document.getElementById('probabilityTrendChart');
+            if(probTrendCtx && typeof Chart !== 'undefined'){
+                const existing = Chart.getChart(probTrendCtx);
+                if(existing) existing.destroy();
+                const prob2d = probTrendCtx.getContext('2d');
+
+                const probGrad = prob2d.createLinearGradient(0, 0, 0, 200);
+                probGrad.addColorStop(0, 'rgba(6, 182, 212, 0.85)');
+                probGrad.addColorStop(1, 'rgba(59, 130, 246, 0.1)');
+
+                new Chart(prob2d, {
+                    type: 'line',
+                    data: {
+                        labels: chartData,
+                        datasets: [{
+                            label: 'Avg Approval Probability',
+                            data: (data.chart_data || []).map(item => item.avg_probability),
+                            borderColor: '#06b6d4',
+                            backgroundColor: probGrad,
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 2.5,
+                            pointHoverRadius: 6,
+                            pointBackgroundColor: '#ffffff',
+                            pointBorderColor: '#06b6d4',
+                            borderWidth: 3
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { ticks: { color: 'rgba(255,255,255,0.8)', maxRotation: 45, minRotation: 45 }, grid: { display: false } },
+                            y: { beginAtZero: true, max: 1, ticks: { color: 'rgba(255,255,255,0.8)', callback: function(v){ return (v * 100).toFixed(0) + '%'; } }, grid: { color: 'rgba(255,255,255,0.05)' } }
+                        }
+                    }
+                });
+            }
+
+            // Render ML Income Analysis Chart
+            const incomeCtx = document.getElementById('incomeAnalysisChart');
+            if(incomeCtx && typeof Chart !== 'undefined'){
+                const existing = Chart.getChart(incomeCtx);
+                if(existing) existing.destroy();
+                const inc2d = incomeCtx.getContext('2d');
+                const incomeData = data.income_analysis || {};
+
+                const incAppGrad = inc2d.createLinearGradient(0, 0, 0, 200);
+                incAppGrad.addColorStop(0, 'rgba(34, 197, 94, 0.9)');
+                incAppGrad.addColorStop(1, 'rgba(16, 185, 129, 0.2)');
+
+                const incRejGrad = inc2d.createLinearGradient(0, 0, 0, 200);
+                incRejGrad.addColorStop(0, 'rgba(239, 68, 68, 0.9)');
+                incRejGrad.addColorStop(1, 'rgba(244, 63, 94, 0.2)');
+
+                new Chart(inc2d, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Approved Avg', 'Rejected Avg'],
+                        datasets: [{
+                            label: 'Avg Income (₹)',
+                            data: [incomeData.approved_avg || 0, incomeData.rejected_avg || 0],
+                            backgroundColor: [incAppGrad, incRejGrad],
+                            borderColor: ['#22C55E', '#EF4444'],
+                            borderWidth: 2,
+                            borderRadius: 8
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context){ return '₹' + Number(context.parsed.y || 0).toLocaleString(); }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: { ticks: { color: 'rgba(255,255,255,0.8)' }, grid: { display: false } },
+                            y: { beginAtZero: true, ticks: { color: 'rgba(255,255,255,0.8)', callback: function(v){ return '₹' + Number(v).toLocaleString(); } }, grid: { color: 'rgba(255,255,255,0.05)' } }
+                        }
+                    }
+                });
+            }
+
+            // Render ML Credit Score Analysis Chart
+            const creditCtx = document.getElementById('creditAnalysisChart');
+            if(creditCtx && typeof Chart !== 'undefined'){
+                const existing = Chart.getChart(creditCtx);
+                if(existing) existing.destroy();
+                const cred2d = creditCtx.getContext('2d');
+                const creditData = data.credit_analysis || {};
+
+                const credAppGrad = cred2d.createLinearGradient(0, 0, 0, 200);
+                credAppGrad.addColorStop(0, 'rgba(34, 197, 94, 0.9)');
+                credAppGrad.addColorStop(1, 'rgba(16, 185, 129, 0.2)');
+
+                const credRejGrad = cred2d.createLinearGradient(0, 0, 0, 200);
+                credRejGrad.addColorStop(0, 'rgba(239, 68, 68, 0.9)');
+                credRejGrad.addColorStop(1, 'rgba(244, 63, 94, 0.2)');
+
+                new Chart(cred2d, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Approved Avg', 'Rejected Avg'],
+                        datasets: [{
+                            label: 'Avg Credit Score',
+                            data: [creditData.approved_avg || 0, creditData.rejected_avg || 0],
+                            backgroundColor: [credAppGrad, credRejGrad],
+                            borderColor: ['#22C55E', '#EF4444'],
+                            borderWidth: 2,
+                            borderRadius: 8
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { ticks: { color: 'rgba(255,255,255,0.8)' }, grid: { display: false } },
+                            y: { beginAtZero: true, ticks: { color: 'rgba(255,255,255,0.8)' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+                        }
+                    }
+                });
+            }
+
+            document.getElementById('card-total-value').dataset.total = total;
+            document.getElementById('card-total-value').dataset.approved = approved;
+            document.getElementById('card-total-value').dataset.rejected = rejected;
+            document.getElementById('card-total-value').dataset.daily = daily;
+
+            // Fetch and render recent activity
+            if (activityRes.ok) {
+                const activityData = await activityRes.json();
+                renderRecentActivity(activityData.recent_activity || []);
+            }
+
+            // Fetch and render notifications
+            if (notificationsRes.ok) {
+                const notificationsData = await notificationsRes.json();
+                renderNotifications(notificationsData.notifications || []);
+            }
+
+        } catch(err){
+            console.error('Error loading dashboard analytics', err);
+        }
+    }
+
+    fetchAndRender();
+    setInterval(fetchAndRender, 5000);
+})();
+
+// Chatbot Widget
+const chatWidget = document.createElement('div');
+chatWidget.innerHTML = `
+    <div id="chatWidget" style="position: fixed; bottom: 30px; right: 30px; z-index: 9999;">
+        <div id="chatButton" onclick="toggleChat()" style="width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%); border: 2px solid rgba(6, 182, 212, 0.5); box-shadow: 0 8px 32px rgba(6, 182, 212, 0.3); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease;">
+            <i class="bi bi-chat-dots-fill" style="color: white; font-size: 28px;"></i>
+        </div>
+        <div id="chatWindow" style="display: none; position: absolute; bottom: 80px; right: 0; width: 380px; max-height: 500px; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(20px); border: 1px solid rgba(6, 182, 212, 0.3); border-radius: 20px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5); overflow: hidden; animation: slideUp 0.3s ease;">
+            <div style="padding: 16px; background: rgba(6, 182, 212, 0.1); border-bottom: 1px solid rgba(6, 182, 212, 0.3);">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div style="width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%); display: flex; align-items: center; justify-content: center;">
+                            <i class="bi bi-robot" style="color: white; font-size: 18px;"></i>
+                        </div>
+                        <div>
+                            <h6 style="color: white; margin: 0; font-weight: 700; font-size: 14px;">AI Loan Assistant</h6>
+                            <span style="color: rgba(255,255,255,0.7); font-size: 11px;">Powered by Gemini AI</span>
+                        </div>
+                    </div>
+                    <button onclick="toggleChat()" style="background: none; border: none; color: rgba(255,255,255,0.7); cursor: pointer; font-size: 20px;">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </div>
+            </div>
+            <div id="chatMessages" style="height: 320px; overflow-y: auto; padding: 16px; background: rgba(15, 23, 42, 0.8);">
+                <div style="margin-bottom: 16px;">
+                    <div style="display: flex; align-items: start; gap: 10px;">
+                        <div style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                            <i class="bi bi-robot" style="color: white; font-size: 16px;"></i>
+                        </div>
+                        <div style="background: rgba(30, 41, 59, 0.9); border: 1px solid rgba(6, 182, 212, 0.3); padding: 12px 16px; border-radius: 16px; max-width: 85%;">
+                            <p style="color: white; margin: 0; font-size: 13px; line-height: 1.5;">Hello! 👋 I'm your AI Loan Assistant. Ask me anything about loans, EMI, credit scores, or documentation!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div style="padding: 12px; background: rgba(15, 23, 42, 0.9); border-top: 1px solid rgba(6, 182, 212, 0.3);">
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="chatInput" placeholder="Ask about loans..." style="flex: 1; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(6, 182, 212, 0.3); border-radius: 25px; padding: 10px 16px; color: white; font-size: 13px; outline: none;" onkeypress="if(event.key === 'Enter') sendMessage()">
+                    <button onclick="sendMessage()" style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                        <i class="bi bi-send-fill" style="color: white; font-size: 16px;"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <style>
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        #chatButton:hover {
+            transform: scale(1.1);
+            box-shadow: 0 12px 40px rgba(6, 182, 212, 0.5);
+        }
+        #chatMessages::-webkit-scrollbar {
+            width: 6px;
+        }
+        #chatMessages::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.5);
+        }
+        #chatMessages::-webkit-scrollbar-thumb {
+            background: rgba(6, 182, 212, 0.3);
+            border-radius: 3px;
+        }
+    </style>
+`;
+document.body.appendChild(chatWidget);
+
+window.toggleChat = function() {
+    const chatWindow = document.getElementById('chatWindow');
+    chatWindow.style.display = chatWindow.style.display === 'none' ? 'block' : 'none';
+};
+
+window.sendMessage = async function() {
+    const input = document.getElementById('chatInput');
+    const message = input.value.trim();
+    if (!message) return;
+
+    const messagesDiv = document.getElementById('chatMessages');
+    
+    messagesDiv.innerHTML += `
+        <div style="margin-bottom: 16px;">
+            <div style="display: flex; align-items: start; gap: 10px; flex-direction: row-reverse;">
+                <div style="width: 32px; height: 32px; border-radius: 50%; background: rgba(51, 65, 85, 0.8); border: 1px solid rgba(6, 182, 212, 0.3); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <i class="bi bi-person-fill" style="color: white; font-size: 16px;"></i>
+                </div>
+                <div style="background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%); padding: 12px 16px; border-radius: 16px; max-width: 85%;">
+                    <p style="color: white; margin: 0; font-size: 13px; line-height: 1.5;">${message}</p>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    input.value = '';
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+    const typingId = 'typing-' + Date.now();
+    messagesDiv.innerHTML += `
+        <div id="${typingId}" style="margin-bottom: 16px;">
+            <div style="display: flex; align-items: start; gap: 10px;">
+                <div style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <i class="bi bi-robot" style="color: white; font-size: 16px;"></i>
+                </div>
+                <div style="background: rgba(30, 41, 59, 0.9); border: 1px solid rgba(6, 182, 212, 0.3); padding: 12px 16px; border-radius: 16px;">
+                    <div style="display: flex; gap: 4px;">
+                        <span style="width: 8px; height: 8px; background: #06b6d4; border-radius: 50%; animation: bounce 1.4s infinite;"></span>
+                        <span style="width: 8px; height: 8px; background: #06b6d4; border-radius: 50%; animation: bounce 1.4s infinite 0.2s;"></span>
+                        <span style="width: 8px; height: 8px; background: #06b6d4; border-radius: 50%; animation: bounce 1.4s infinite 0.4s;"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <style>
+            @keyframes bounce {
+                0%, 100% { transform: translateY(0); }
+                50% { transform: translateY(-8px); }
+            }
+        </style>
+    `;
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+    try {
+        const response = await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: message })
+        });
+        const data = await response.json();
+        
+        document.getElementById(typingId).remove();
+        
+        messagesDiv.innerHTML += `
+            <div style="margin-bottom: 16px;">
+                <div style="display: flex; align-items: start; gap: 10px;">
+                    <div style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                        <i class="bi bi-robot" style="color: white; font-size: 16px;"></i>
+                    </div>
+                    <div style="background: rgba(30, 41, 59, 0.9); border: 1px solid rgba(6, 182, 212, 0.3); padding: 12px 16px; border-radius: 16px; max-width: 85%;">
+                        <p style="color: white; margin: 0; font-size: 13px; line-height: 1.5; white-space: pre-wrap;">${data.reply || 'I am unable to respond at the moment.'}</p>
+                    </div>
+                </div>
+            </div>
+        `;
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    } catch (error) {
+        document.getElementById(typingId).remove();
+        messagesDiv.innerHTML += `
+            <div style="margin-bottom: 16px;">
+                <div style="display: flex; align-items: start; gap: 10px;">
+                    <div style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                        <i class="bi bi-robot" style="color: white; font-size: 16px;"></i>
+                    </div>
+                    <div style="background: rgba(30, 41, 59, 0.9); border: 1px solid rgba(239, 68, 68, 0.3); padding: 12px 16px; border-radius: 16px; max-width: 85%;">
+                        <p style="color: white; margin: 0; font-size: 13px;">Sorry, I couldn't reach the AI service. Please try again.</p>
+                    </div>
+                </div>
+            </div>
+        `;
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+};
+</script>
+{% endblock %}

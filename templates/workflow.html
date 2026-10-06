@@ -1,0 +1,699 @@
+{% extends "base.html" %}
+
+{% block title %}Loan Application Workflow - SmartLoanApprove{% endblock %}
+{% block page_title %}Loan Application Workflow Tracker{% endblock %}
+
+{% block extra_css %}
+<style>
+.workflow-container {
+    background: rgba(15, 23, 42, 0.65);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: var(--shadow-lg);
+}
+
+.timeline {
+    position: relative;
+    padding: 20px 0;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(180deg, rgba(34, 197, 94, 0.4) 0%, rgba(6, 182, 212, 0.4) 100%);
+    border-radius: 4px;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 40px;
+    padding: 0 40px;
+}
+
+.timeline-item:nth-child(odd) {
+    padding-right: 50%;
+    text-align: right;
+}
+
+.timeline-item:nth-child(even) {
+    padding-left: 50%;
+    text-align: left;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: rgba(15, 23, 42, 0.9);
+    border: 3px solid rgba(6, 182, 212, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    transition: all 0.3s ease;
+}
+
+.timeline-marker.completed {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    border-color: #34d399;
+    box-shadow: 0 0 25px rgba(16, 185, 129, 0.6);
+}
+
+.timeline-marker.pending {
+    background: rgba(15, 23, 42, 0.9);
+    border-color: #3b82f6;
+    animation: pulse-blue 2s infinite;
+}
+
+@keyframes pulse-blue {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.5);
+    }
+    50% {
+        box-shadow: 0 0 0 12px rgba(59, 130, 246, 0);
+    }
+}
+
+.timeline-content {
+    background: rgba(30, 41, 59, 0.6);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 20px;
+    transition: all 0.3s ease;
+}
+
+.timeline-content.stage-done {
+    border-color: rgba(16, 185, 129, 0.4);
+    background: rgba(16, 185, 129, 0.05);
+}
+
+.timeline-content:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 30px rgba(6, 182, 212, 0.2);
+}
+
+.timeline-item:nth-child(odd) .timeline-content {
+    margin-right: 20px;
+}
+
+.timeline-item:nth-child(even) .timeline-content {
+    margin-left: 20px;
+}
+
+.stage-title {
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 8px;
+    font-size: 1.05rem;
+}
+
+.stage-status {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.status-completed {
+    background: rgba(16, 185, 129, 0.2);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+.status-pending {
+    background: rgba(251, 191, 36, 0.15);
+    color: #fbbf24;
+    border: 1px solid rgba(251, 191, 36, 0.3);
+}
+
+.status-in-progress {
+    background: rgba(59, 130, 246, 0.2);
+    color: #60a5fa;
+    border: 1px solid rgba(59, 130, 246, 0.4);
+}
+
+.stage-timestamp {
+    color: var(--text-secondary);
+    font-size: 13px;
+}
+
+.new-application-btn {
+    background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%);
+    border: none;
+    border-radius: 12px;
+    padding: 10px 24px;
+    font-weight: 600;
+    color: white;
+    transition: all 0.3s ease;
+}
+
+.new-application-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(6, 182, 212, 0.4);
+}
+
+.application-card {
+    background: rgba(30, 41, 59, 0.5);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 18px;
+    margin-bottom: 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.application-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--accent-primary);
+    box-shadow: 0 8px 25px rgba(6, 182, 212, 0.2);
+}
+
+.application-card.active {
+    border-color: #06b6d4;
+    background: rgba(6, 182, 212, 0.1);
+    box-shadow: 0 0 20px rgba(6, 182, 212, 0.3);
+}
+
+@media (max-width: 768px) {
+    .timeline::before {
+        left: 20px;
+    }
+    
+    .timeline-item {
+        padding-left: 50px;
+        padding-right: 0;
+        text-align: left;
+    }
+    
+    .timeline-item:nth-child(odd),
+    .timeline-item:nth-child(even) {
+        padding-left: 50px;
+        text-align: left;
+    }
+    
+    .timeline-marker {
+        left: 20px;
+    }
+    
+    .timeline-item:nth-child(odd) .timeline-content,
+    .timeline-item:nth-child(even) .timeline-content {
+        margin-left: 20px;
+        margin-right: 0;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="py-3" style="background: transparent;">
+    <div class="container-fluid">
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <h4 class="fw-bold text-white mb-1 d-flex align-items-center gap-2">
+                            <i class="bi bi-diagram-3-fill text-info"></i>Loan Application Workflow Tracker
+                        </h4>
+                        <p class="text-secondary small mb-0">Track real-time approval stages verified by bank administrators</p>
+                    </div>
+                    <span class="badge bg-dark text-success border border-success border-opacity-25 px-3 py-2 rounded-pill">
+                        <i class="bi bi-arrow-repeat spin me-1.5"></i>Live Admin Sync Active
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <!-- Sidebar: User Applications -->
+            <div class="col-lg-4">
+                <div class="workflow-container">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="text-white fw-bold mb-0">My Applications</h5>
+                        <button class="btn btn-sm new-application-btn d-flex align-items-center gap-1.5" onclick="createNewApplication()">
+                            <i class="bi bi-plus-lg"></i>New
+                        </button>
+                    </div>
+                    <div id="applicationsList">
+                        <div class="text-center text-white-50 py-4">
+                            <i class="bi bi-inbox fs-4 mb-2"></i>
+                            <p>Loading applications...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Panel: Workflow Timeline & Details -->
+            <div class="col-lg-8">
+                <div class="workflow-container">
+                    <h5 class="text-white fw-bold mb-4" id="timelineTitle">Application Timeline</h5>
+                    <div id="timelineContainer">
+                        <div class="text-center text-white-50 py-4">
+                            <i class="bi bi-diagram-3 fs-4 mb-2"></i>
+                            <p>Select an application to view workflow progress</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Documents Section -->
+                <div class="workflow-container mt-4" id="documentsSection" style="display: none;">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="text-white fw-bold mb-0">Application Documents</h5>
+                        <button class="btn btn-sm btn-primary" onclick="openUploadModal()">
+                            <i class="bi bi-upload me-1.5"></i>Upload Document
+                        </button>
+                    </div>
+                    <div id="documentsList">
+                        <div class="text-center text-white-50 py-4">
+                            <i class="bi bi-file-earmark fs-4 mb-2"></i>
+                            <p>No documents uploaded yet</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Support Chat Section -->
+                <div class="workflow-container mt-4" id="chatSection" style="display: none;">
+                    <h5 class="text-white fw-bold mb-4">Direct Officer Support Chat</h5>
+                    <div id="chatMessages" style="max-height: 300px; overflow-y: auto; margin-bottom: 15px;">
+                    </div>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="chatInput" placeholder="Type your inquiry for bank officers...">
+                        <button class="btn btn-primary px-4" onclick="sendChatMessage()">
+                            <i class="bi bi-send-fill me-1"></i>Send
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let selectedApplicationId = null;
+let autoRefreshTimer = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlAppId = urlParams.get('application_id');
+    if (urlAppId) {
+        selectedApplicationId = urlAppId;
+    }
+    loadApplications();
+
+    // Set auto refresh polling every 4 seconds for live sync with Admin Panel updates
+    autoRefreshTimer = setInterval(() => {
+        if (selectedApplicationId) {
+            fetchWorkflowDetailsSilent(selectedApplicationId);
+        } else {
+            loadApplications(true);
+        }
+    }, 4000);
+});
+
+async function createNewApplication() {
+    try {
+        const response = await fetch('/api/workflow/applications', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            showToast('Application created successfully! ID: ' + data.application_id, 'success');
+            selectedApplicationId = data.application_id;
+            loadApplications();
+            selectApplication(data.application_id);
+        } else {
+            showToast('Error: ' + data.message, 'danger');
+        }
+    } catch (error) {
+        showToast('Error creating application', 'danger');
+    }
+}
+
+async function loadApplications(isSilent = false) {
+    try {
+        const response = await fetch('/api/workflow/applications');
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            renderApplications(data.workflows);
+            // If none selected yet, select the first one
+            if (!selectedApplicationId && data.workflows && data.workflows.length > 0) {
+                selectApplication(data.workflows[0].application_id);
+            }
+        }
+    } catch (error) {
+        if (!isSilent) console.error('Error loading applications:', error);
+    }
+}
+
+function renderApplications(workflows) {
+    const container = document.getElementById('applicationsList');
+    
+    if (!workflows || workflows.length === 0) {
+        container.innerHTML = `
+            <div class="text-center text-white-50 py-4">
+                <i class="bi bi-inbox fs-4 mb-2"></i>
+                <p>No applications found</p>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = workflows.map(app => `
+        <div class="application-card ${selectedApplicationId === app.application_id ? 'active' : ''}" 
+             onclick="selectApplication('${app.application_id}')">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <h6 class="text-white fw-bold mb-0">${app.application_id}</h6>
+                <span class="stage-status status-${(app.application_status || 'pending').toLowerCase().replace(/[^a-z0-9]+/g, '-')}">
+                    ${app.application_status === 'Approved' ? '<i class="bi bi-check-circle-fill me-1"></i>Approved ✓' : app.application_status || 'Pending'}
+                </span>
+            </div>
+            <div class="text-white-50 small mb-1">Current Stage: <strong>${formatStage(app.current_stage)}</strong></div>
+            <div class="text-white-50 small" style="font-size: 0.725rem;">${app.created_at_formatted}</div>
+        </div>
+    `).join('');
+}
+
+async function selectApplication(applicationId) {
+    selectedApplicationId = applicationId;
+    fetchWorkflowDetailsSilent(applicationId);
+}
+
+async function fetchWorkflowDetailsSilent(applicationId) {
+    try {
+        const response = await fetch(`/api/workflow/applications/${applicationId}`);
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            renderTimeline(data.workflow);
+            document.getElementById('documentsSection').style.display = 'block';
+            document.getElementById('chatSection').style.display = 'block';
+            loadDocuments(applicationId);
+            loadChatMessages(applicationId);
+        }
+    } catch (error) {
+        console.error('Error loading application details:', error);
+    }
+}
+
+// Render timeline with prominent Green Right Ticks for completed stages
+function renderTimeline(workflow) {
+    document.getElementById('timelineTitle').innerHTML = `
+        <div class="d-flex align-items-center justify-content-between">
+            <span>Workflow Timeline &mdash; <span class="text-info">${workflow.application_id}</span></span>
+            <span class="badge ${workflow.application_status === 'Approved' ? 'bg-success' : workflow.application_status === 'Rejected' ? 'bg-danger' : 'bg-info'} text-white px-3 py-1.5 rounded-pill fs-6">
+                ${workflow.application_status === 'Approved' ? '<i class="bi bi-check-circle-fill me-1"></i>Approved ✓' : workflow.application_status}
+            </span>
+        </div>
+    `;
+    
+    const stages = [
+        { key: 'application_submitted', title: '1. Application Submitted', icon: 'bi-file-earmark-check' },
+        { key: 'documents_verification', title: '2. Documents Verification', icon: 'bi-file-earmark-text' },
+        { key: 'ai_risk_analysis', title: '3. AI Risk Analysis', icon: 'bi-cpu' },
+        { key: 'admin_review', title: '4. Admin Final Review', icon: 'bi-person-check' },
+        { key: 'final_decision', title: '5. Final Decision', icon: 'bi-check-circle' }
+    ];
+    
+    const container = document.getElementById('timelineContainer');
+    
+    container.innerHTML = `
+        <div class="timeline">
+            ${stages.map((stage, index) => {
+                const stageData = workflow.stages[stage.key] || {};
+                const isCompleted = stageData.completed;
+                const isCurrent = workflow.current_stage === stage.key;
+                
+                return `
+                    <div class="timeline-item">
+                        <div class="timeline-marker ${isCompleted ? 'completed' : isCurrent ? 'pending' : ''}">
+                            ${isCompleted ? 
+                                '<i class="bi bi-check-lg text-white fs-3 fw-bold"></i>' : 
+                                `<i class="bi ${stage.icon} ${isCurrent ? 'text-info' : 'text-white-50'}"></i>`
+                            }
+                        </div>
+                        <div class="timeline-content ${isCompleted ? 'stage-done' : ''}">
+                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                <div class="stage-status ${isCompleted ? 'status-completed' : isCurrent ? 'status-in-progress' : 'status-pending'}">
+                                    ${isCompleted ? '<i class="bi bi-check-circle-fill me-1"></i>Completed ✓' : isCurrent ? '<i class="bi bi-arrow-repeat spin me-1"></i>In Progress' : 'Pending'}
+                                </div>
+                                ${isCompleted ? '<span class="badge bg-success text-white rounded-pill px-2.5 py-1" style="font-size:0.75rem; box-shadow:0 0 12px rgba(34,197,94,0.5);"><i class="bi bi-check-lg me-1"></i>Approved ✓</span>' : ''}
+                            </div>
+                            <h6 class="stage-title text-white">${stage.title}</h6>
+                            ${stageData.status ? `<div class="text-secondary small mb-1">Status: <strong class="text-white">${stageData.status}</strong></div>` : ''}
+                            ${stageData.formatted ? `<div class="stage-timestamp"><i class="bi bi-clock me-1"></i>${stageData.formatted}</div>` : ''}
+                            ${stage.key === 'final_decision' && workflow.application_status !== 'Pending' ? 
+                                `<div class="mt-2.5 p-2 rounded bg-dark border border-secondary border-opacity-25"><strong class="${workflow.application_status === 'Approved' ? 'text-success' : 'text-danger'} fs-6"><i class="bi ${workflow.application_status === 'Approved' ? 'bi-check-circle-fill' : 'bi-x-circle-fill'} me-1.5"></i>${workflow.application_status}</strong></div>` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('')}
+        </div>
+        
+        <!-- Admin Remarks & Comments -->
+        <div class="mt-4 p-4" style="background: rgba(30, 41, 59, 0.6); border: 1px solid var(--border-color); border-radius: 16px;">
+            <h6 class="text-white fw-bold mb-3 d-flex align-items-center gap-2">
+                <i class="bi bi-chat-quote-fill text-info"></i>Admin Officer Remarks
+            </h6>
+            <div id="adminCommentsList">
+                <div class="text-center text-white-50 py-3">Loading comments...</div>
+            </div>
+        </div>
+        
+        <!-- Notifications Log -->
+        <div class="mt-4 p-4" style="background: rgba(30, 41, 59, 0.6); border: 1px solid var(--border-color); border-radius: 16px;">
+            <h6 class="text-white fw-bold mb-3 d-flex align-items-center gap-2">
+                <i class="bi bi-bell-fill text-info"></i>Application Activity Audit Log
+            </h6>
+            <div id="notificationsList">
+                <div class="text-center text-white-50 py-3">Loading notifications...</div>
+            </div>
+        </div>
+    `;
+    
+    loadAdminComments(workflow.application_id);
+    loadApplicationNotifications(workflow.application_id);
+}
+
+async function loadAdminComments(applicationId) {
+    try {
+        const response = await fetch(`/api/admin/comments/${applicationId}`);
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            renderAdminComments(data.comments);
+        } else {
+            document.getElementById('adminCommentsList').innerHTML = '<div class="text-muted small">No comments recorded yet</div>';
+        }
+    } catch (error) {
+        document.getElementById('adminCommentsList').innerHTML = '<div class="text-muted small">No comments recorded yet</div>';
+    }
+}
+
+function renderAdminComments(comments) {
+    const container = document.getElementById('adminCommentsList');
+    
+    if (!comments || comments.length === 0) {
+        container.innerHTML = '<div class="text-muted small">No officer comments recorded yet</div>';
+        return;
+    }
+    
+    container.innerHTML = comments.map(comment => `
+        <div class="mb-2 p-3" style="background: rgba(15, 23, 42, 0.6); border-radius: 12px; border-left: 4px solid #06b6d4;">
+            <div class="d-flex justify-content-between align-items-start mb-1">
+                <div class="text-white fw-semibold small">${formatStage(comment.stage)}</div>
+                <div class="text-muted small" style="font-size: 0.7rem;">${comment.created_at_formatted || 'Recently'}</div>
+            </div>
+            <div class="text-secondary small">${comment.comment}</div>
+        </div>
+    `).join('');
+}
+
+async function loadApplicationNotifications(applicationId) {
+    try {
+        const response = await fetch(`/api/notifications/application/${applicationId}`);
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            renderNotifications(data.notifications);
+        } else {
+            document.getElementById('notificationsList').innerHTML = '<div class="text-muted small">No notifications yet</div>';
+        }
+    } catch (error) {
+        document.getElementById('notificationsList').innerHTML = '<div class="text-muted small">No notifications yet</div>';
+    }
+}
+
+function renderNotifications(notifications) {
+    const container = document.getElementById('notificationsList');
+    
+    if (!notifications || notifications.length === 0) {
+        container.innerHTML = '<div class="text-muted small">No notifications logged yet</div>';
+        return;
+    }
+    
+    container.innerHTML = notifications.slice(0, 5).map(notification => `
+        <div class="mb-2 p-2.5" style="background: rgba(15, 23, 42, 0.5); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.05);">
+            <div class="text-white fw-semibold small">${notification.title}</div>
+            <div class="text-secondary small" style="font-size: 0.75rem;">${notification.message}</div>
+            <div class="text-muted small mt-1" style="font-size: 0.675rem;">${notification.created_at_formatted || 'Recently'}</div>
+        </div>
+    `).join('');
+}
+
+async function loadDocuments(applicationId) {
+    try {
+        const response = await fetch(`/api/documents/${applicationId}`);
+        const data = await response.json();
+        if (data.status === 'success') {
+            renderDocuments(data.documents);
+        }
+    } catch (error) {
+        console.error('Error loading documents:', error);
+    }
+}
+
+function renderDocuments(documents) {
+    const container = document.getElementById('documentsList');
+    if (!documents || documents.length === 0) {
+        container.innerHTML = `
+            <div class="text-center text-white-50 py-4">
+                <i class="bi bi-file-earmark fs-4 mb-2"></i>
+                <p class="small">No documents uploaded yet</p>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = documents.map(doc => `
+        <div class="d-flex justify-content-between align-items-center p-3 mb-2" style="background: rgba(15, 23, 42, 0.6); border-radius: 12px; border: 1px solid var(--border-color);">
+            <div>
+                <div class="text-white fw-semibold small">${doc.document_name}</div>
+                <div class="text-secondary small" style="font-size: 0.725rem;">${doc.document_type} • ${doc.created_at_formatted || 'Recently'}</div>
+            </div>
+            <span class="status-badge ${doc.verification_status === 'Approved' ? 'approved' : doc.verification_status === 'Rejected' ? 'rejected' : 'pending'}">
+                ${doc.verification_status === 'Approved' ? '<i class="bi bi-check-circle-fill me-1"></i>Approved ✓' : doc.verification_status}
+            </span>
+        </div>
+    `).join('');
+}
+
+function openUploadModal() {
+    const documentType = prompt('Enter document type (Identity Proof, Income Proof, Bank Statement, Other):');
+    if (!documentType) return;
+    
+    const documentName = prompt('Enter document name:');
+    if (!documentName) return;
+    
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = '.pdf,.jpg,.jpeg,.png';
+    fileInput.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('document_type', documentType);
+        formData.append('document_name', documentName);
+        
+        try {
+            const response = await fetch(`/api/workflow/applications/${selectedApplicationId}/documents`, {
+                method: 'POST',
+                body: formData
+            });
+            
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+                showToast('Document uploaded successfully', 'success');
+                loadDocuments(selectedApplicationId);
+            } else {
+                showToast('Error: ' + data.message, 'danger');
+            }
+        } catch (error) {
+            showToast('Error uploading document', 'danger');
+        }
+    };
+    fileInput.click();
+}
+
+async function loadChatMessages(applicationId) {
+    try {
+        const response = await fetch(`/api/chat/messages/${applicationId}`);
+        const data = await response.json();
+        if (data.status === 'success') {
+            renderChatMessages(data.messages);
+        }
+    } catch (error) {
+        console.error('Error loading chat messages:', error);
+    }
+}
+
+function renderChatMessages(messages) {
+    const container = document.getElementById('chatMessages');
+    if (!messages || messages.length === 0) {
+        container.innerHTML = '<div class="text-center text-muted small py-3">No message history yet</div>';
+        return;
+    }
+    
+    container.innerHTML = messages.map(msg => `
+        <div class="mb-3 ${msg.is_admin ? 'text-start' : 'text-end'}">
+            <div class="d-inline-block p-3 rounded-3" style="background: ${msg.is_admin ? 'rgba(6, 182, 212, 0.15)' : 'rgba(59, 130, 246, 0.2)'}; border: 1px solid var(--border-color); max-width: 80%;">
+                <div class="text-white small">${msg.message}</div>
+                ${msg.reply ? `<div class="text-info small mt-2"><strong>Bank Officer Reply:</strong> ${msg.reply}</div>` : ''}
+                <div class="text-muted small mt-1" style="font-size: 0.65rem;">${msg.timestamp_formatted}</div>
+            </div>
+        </div>
+    `).join('');
+}
+
+async function sendChatMessage() {
+    const input = document.getElementById('chatInput');
+    const message = input.value.trim();
+    
+    if (!message || !selectedApplicationId) return;
+    
+    try {
+        const response = await fetch('/api/chat/messages', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message, application_id: selectedApplicationId })
+        });
+        
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            input.value = '';
+            loadChatMessages(selectedApplicationId);
+        } else {
+            showToast('Error: ' + data.message, 'danger');
+        }
+    } catch (error) {
+        showToast('Error sending message', 'danger');
+    }
+}
+
+function formatStage(stage) {
+    if (!stage) return 'Application Submitted';
+    return stage.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+}
+</script>
+{% endblock %}
+

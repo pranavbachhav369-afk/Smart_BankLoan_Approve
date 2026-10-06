@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+
+{% block page_title %}Enterprise Loan Review{% endblock %}
+
+{% block content %}
+<div class="enterprise-review-shell">
+    <div class="review-hero">
+        <div class="hero-left">
+            <div class="hero-icon"><i class="bi bi-bank2"></i></div>
+            <div>
+                <h1>Enterprise Application Review</h1>
+                <p>Premium review experience for enterprise loan applications</p>
+            </div>
+        </div>
+        <div class="hero-badge"><i class="bi bi-shield-check"></i> Secured review workspace</div>
+    </div>
+
+    <div class="review-grid">
+        <aside class="review-list-panel">
+            <div class="panel-heading">
+                <h3>Applications</h3>
+                <span id="listCount">0</span>
+            </div>
+            <div id="reviewApplications"></div>
+        </aside>
+
+        <main class="review-detail-panel">
+            <div id="reviewDetailContent" class="empty-state">Select an application to begin review</div>
+        </main>
+    </div>
+</div>
+
+<style>
+    .enterprise-review-shell { padding: 24px; color: #f8fafc; }
+    .review-hero { display:flex; justify-content:space-between; align-items:center; background: linear-gradient(135deg, rgba(15,23,42,0.95), rgba(30,41,59,0.9)); border:1px solid rgba(99,102,241,0.25); border-radius:24px; padding:24px; margin-bottom:20px; box-shadow:0 20px 50px rgba(15,23,42,0.25); }
+    .hero-left { display:flex; gap:16px; align-items:center; }
+    .hero-icon { width:56px; height:56px; border-radius:16px; display:grid; place-items:center; background: linear-gradient(135deg,#6366f1,#8b5cf6); font-size: 1.6rem; }
+    .hero-left h1 { font-size: 1.5rem; margin-bottom:4px; }
+    .hero-left p { margin:0; color: rgba(248,250,252,0.7); }
+    .hero-badge { background: rgba(6,182,212,0.15); border:1px solid rgba(6,182,212,0.25); padding:10px 14px; border-radius:999px; color:#67e8f9; }
+    .review-grid { display:grid; grid-template-columns: 360px 1fr; gap:20px; }
+    .review-list-panel, .review-detail-panel { background: rgba(15,23,42,0.82); border:1px solid rgba(255,255,255,0.08); border-radius:24px; box-shadow: inset 0 1px 0 rgba(255,255,255,0.06); overflow:hidden; }
+    .panel-heading { display:flex; justify-content:space-between; align-items:center; padding:18px 20px; border-bottom:1px solid rgba(255,255,255,0.08); }
+    .panel-heading h3 { margin:0; font-size:1rem; }
+    .panel-heading span { background: rgba(99,102,241,0.2); color:#c7d2fe; border-radius:999px; padding:4px 10px; font-size:.8rem; }
+    #reviewApplications { padding:14px; max-height:720px; overflow:auto; }
+    .review-item { border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:14px; margin-bottom:12px; background: rgba(255,255,255,0.04); cursor:pointer; transition: all .2s ease; }
+    .review-item:hover, .review-item.active { border-color:#6366f1; transform: translateY(-2px); background: rgba(99,102,241,0.12); }
+    .review-item .app-id { font-weight:700; color:#fff; }
+    .review-item .item-meta { color: rgba(248,250,252,0.7); font-size:.82rem; margin-top:4px; }
+    .review-detail-panel { min-height:720px; }
+    .empty-state { padding:40px; text-align:center; color: rgba(248,250,252,0.6); }
+    .review-card { background: rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:20px; padding:20px; margin:16px; }
+    .review-tabs { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:16px; }
+    .review-tabs button { background: rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:#e2e8f0; padding:8px 12px; border-radius:999px; }
+    .review-tabs button.active { background: linear-gradient(135deg,#6366f1,#8b5cf6); color:white; }
+    .detail-grid { display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:12px; }
+    .detail-item { background: rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); padding:12px; border-radius:12px; }
+    .detail-label { font-size:.74rem; text-transform:uppercase; color: rgba(248,250,252,0.55); margin-bottom:6px; }
+    .detail-value { color:#fff; font-weight:600; }
+    .doc-card { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px 14px; margin-bottom:10px; border-radius:14px; background: rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); }
+    .doc-card .doc-name { font-weight:600; color:#fff; }
+    .doc-card .doc-sub { font-size:.8rem; color: rgba(248,250,252,0.65); }
+    .action-row { display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
+    .action-btn { border:none; padding:10px 14px; border-radius:12px; font-weight:600; color:white; cursor:pointer; }
+    .approve { background: linear-gradient(135deg,#10b981,#059669); }
+    .reject { background: linear-gradient(135deg,#ef4444,#dc2626); }
+    .remark { background: linear-gradient(135deg,#f59e0b,#d97706); }
+    .timeline-item { display:flex; gap:10px; padding:10px 0; border-left:2px solid rgba(99,102,241,0.25); margin-left:10px; padding-left:18px; position:relative; }
+    .timeline-item::before { content:''; position:absolute; left:-6px; top:14px; width:10px; height:10px; border-radius:50%; background:#6366f1; }
+    .timeline-item.done::before { background:#10b981; }
+    @media (max-width: 1080px){ .review-grid{grid-template-columns:1fr;} }
+</style>
+
+<script>
+let selectedApplicationId = null;
+let reviewData = null;
+
+window.addEventListener('DOMContentLoaded', () => loadApplications());
+
+async function loadApplications(){
+  try{
+    const response = await fetch('/api/admin/workflow/applications');
+    const data = await response.json();
+    if(data.status !== 'success') throw new Error(data.message || 'Failed');
+    const apps = data.workflows || [];
+    document.getElementById('listCount').textContent = apps.length;
+    const container = document.getElementById('reviewApplications');
+    if(!apps.length){ container.innerHTML = '<div class="empty-state">No applications available</div>'; return; }
+    container.innerHTML = apps.map(app => `
+      <div class="review-item ${selectedApplicationId === app.application_id ? 'active' : ''}" onclick="selectApplication('${app.application_id}')">
+        <div class="app-id">${app.application_id}</div>
+        <div class="item-meta">${app.user_id} • ${app.current_stage_label || 'Application Submitted'}</div>
+        <div class="item-meta">Status: ${app.application_status || 'Pending'}</div>
+      </div>
+    `).join('');
+    if(!selectedApplicationId && apps.length) selectApplication(apps[0].application_id);
+  }catch(err){ console.error(err); }
+}
+
+async function selectApplication(applicationId){
+  selectedApplicationId = applicationId;
+  await loadApplications();
+  try{
+    const response = await fetch(`/api/workflow/applications/${applicationId}`);
+    const data = await response.json();
+    if(data.status !== 'success') throw new Error(data.message || 'Failed');
+    reviewData = data;
+    renderReview(data);
+  }catch(err){ console.error(err); }
+}
+
+function renderReview(data){
+  const app = data.application || {};
+  const detail = document.getElementById('reviewDetailContent');
+  detail.innerHTML = `
+    <div class="review-card">
+      <div class="review-tabs">
+        <button class="active" data-tab="overview">Overview</button>
+        <button data-tab="personal">Personal Details</button>
+        <button data-tab="business">Business Details</button>
+        <button data-tab="financial">Financial Details</button>
+        <button data-tab="loan">Loan Details</button>
+        <button data-tab="documents">Documents</button>
+      </div>
+      <div id="tabContent">
+        ${renderOverview(app, data.workflow)}
+      </div>
+    </div>
+  `;
+  attachTabHandlers();
+}
+
+function attachTabHandlers(){
+  document.querySelectorAll('.review-tabs button').forEach(btn => btn.addEventListener('click', () => {
+    document.querySelectorAll('.review-tabs button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const tab = btn.getAttribute('data-tab');
+    const app = reviewData.application || {};
+    const workflow = reviewData.workflow || {};
+    const content = tab === 'overview' ? renderOverview(app, workflow) : tab === 'personal' ? renderPersonal(app) : tab === 'business' ? renderBusiness(app) : tab === 'financial' ? renderFinancial(app) : tab === 'loan' ? renderLoan(app) : renderDocuments(app);
+    document.getElementById('tabContent').innerHTML = content;
+  }));
+}
+
+function renderOverview(app, workflow){
+  return `
+    <div class="detail-grid">
+      <div class="detail-item"><div class="detail-label">Application ID</div><div class="detail-value">${app.application_id || ''}</div></div>
+      <div class="detail-item"><div class="detail-label">Applicant</div><div class="detail-value">${app.full_name || 'N/A'}</div></div>
+      <div class="detail-item"><div class="detail-label">Current Stage</div><div class="detail-value">${workflow.current_stage_label || workflow.current_stage || 'Application Submitted'}</div></div>
+      <div class="detail-item"><div class="detail-label">Status</div><div class="detail-value">${app.application_status || 'Pending'}</div></div>
+      <div class="detail-item"><div class="detail-label">Email</div><div class="detail-value">${app.email_address || 'N/A'}</div></div>
+      <div class="detail-item"><div class="detail-label">Phone</div><div class="detail-value">${app.phone_number || 'N/A'}</div></div>
+    </div>
+    <div class="review-card" style="margin:16px 0 0 0;">
+      <h5 style="margin-top:0">Approval Workflow</h5>
+      <div class="action-row">
+        <button class="action-btn approve" onclick="updateStage('Approved')">Approve</button>
+        <button class="action-btn reject" onclick="updateStage('Rejected')">Reject</button>
+        <button class="action-btn remark" onclick="addRemark()">Add Remark</button>
+      </div>
+      <div class="action-row">
+        <button class="action-btn approve" onclick="updateStage('In Progress')">Move to In Progress</button>
+        <button class="action-btn remark" onclick="updateStage('Need Correction')">Need Correction</button>
+      </div>
+      <div class="mt-3">
+        <label style="display:block; margin-bottom:8px;">Remark</label>
+        <textarea id="reviewRemark" class="form-control" rows="3" placeholder="Add a review remark"></textarea>
+      </div>
+    </div>
+    <div class="review-card" style="margin:16px 0 0 0;">
+      <h5 style="margin-top:0">Timeline</h5>
+      ${renderTimeline(workflow)}
+    </div>
+  `;
+}
+
+function renderPersonal(app){ return `<div class="detail-grid">${renderField('Full Name', app.full_name)}${renderField('Email', app.email_address)}${renderField('Phone', app.phone_number)}${renderField('Date of Birth', app.date_of_birth)}${renderField('Gender', app.gender)}${renderField('Marital Status', app.marital_status)}${renderField('Dependents', app.dependents)}${renderField('Address', app.address)}${renderField('City', app.city)}${renderField('State', app.state)}${renderField('Pincode', app.pincode)}${renderField('Education Level', app.education_level)}</div>`; }
+function renderBusiness(app){ return `<div class="detail-grid">${renderField('Employment Type', app.employment_type)}${renderField('Employment Status', app.employment_status)}${renderField('Company Name', app.company_name)}${renderField('Work Experience', app.work_experience_years)}${renderField('Property Area', app.property_area)}${renderField('Collateral Type', app.collateral_type)}${renderField('Collateral Value', app.collateral_value)}</div>`; }
+function renderFinancial(app){ return `<div class="detail-grid">${renderField('Monthly Income', app.monthly_income)}${renderField('Annual Income', app.annual_income)}${renderField('Other Income', app.other_income)}${renderField('Existing Loans', app.existing_loans)}${renderField('Monthly Debt', app.monthly_debt)}${renderField('Credit Score', app.credit_score)}${renderField('Credit History', app.credit_history)}${renderField('AI Risk Level', app.ai_risk_level)}${renderField('AI Risk Score', app.ai_risk_score)}${renderField('Approval Probability', app.approval_probability)}</div>`; }
+function renderLoan(app){ return `<div class="detail-grid">${renderField('Loan Amount', app.loan_amount)}${renderField('Loan Purpose', app.loan_purpose)}${renderField('Loan Term', app.loan_amount_term)}${renderField('Application Status', app.application_status)}${renderField('Current Stage', app.current_stage)}${renderField('Admin Remark', app.admin_comment)}</div>`; }
+function renderDocuments(app){
+  const docs = app.documents || [];
+  if(!docs.length) return '<div class="empty-state">No documents uploaded.</div>';
+  return docs.map(doc => `
+    <div class="doc-card">
+      <div>
+        <div class="doc-name">${doc.document_name || 'Document'}</div>
+        <div class="doc-sub">${doc.document_type || 'Document'} • ${doc.verification_status || 'Pending'}</div>
+        ${doc.admin_remark ? `<div class="doc-sub">Remark: ${doc.admin_remark}</div>` : ''}
+      </div>
+      <div class="action-row" style="margin-top:0;">
+        ${doc.file_path ? `<a class="action-btn approve" href="/${doc.file_path}" target="_blank" style="text-decoration:none;">Download</a>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+function renderField(label, value){ return `<div class="detail-item"><div class="detail-label">${label}</div><div class="detail-value">${value ?? 'N/A'}</div></div>`; }
+function renderTimeline(workflow){
+  const stages = [
+    ['Application Submitted', workflow.stages?.application_submitted?.completed],
+    ['Documents Verification', workflow.stages?.documents_verification?.completed],
+    ['AI Risk Analysis', workflow.stages?.ai_risk_analysis?.completed],
+    ['Admin Review', workflow.stages?.admin_review?.completed],
+    ['Final Decision', workflow.stages?.final_decision?.completed],
+  ];
+  return stages.map(([title, done]) => `<div class="timeline-item ${done ? 'done' : ''}">${title}</div>`).join('');
+}
+async function updateStage(status){
+  const remark = document.getElementById('reviewRemark').value.trim();
+  try{
+    const response = await fetch(`/api/admin/workflow/applications/${selectedApplicationId}/stage`, {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({stage: reviewData.workflow.current_stage || 'application_submitted', status, comment: remark || 'Reviewed by admin'})});
+    const data = await response.json();
+    if(data.status === 'success'){ alert('Stage updated'); loadApplications(); selectApplication(selectedApplicationId); } else { alert(data.message || 'Failed'); }
+  }catch(err){ alert('Unable to update stage'); }
+}
+async function addRemark(){
+  const remark = document.getElementById('reviewRemark').value.trim();
+  if(!remark) { alert('Please enter a remark'); return; }
+  try{
+    const response = await fetch(`/api/admin/workflow/applications/${selectedApplicationId}/decision`, {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({decision: 'Pending', remark})});
+    const data = await response.json();
+    if(data.status === 'success'){ alert('Remark saved'); loadApplications(); selectApplication(selectedApplicationId); } else { alert(data.message || 'Failed'); }
+  }catch(err){ alert('Unable to save remark'); }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,558 @@
+{% extends "base.html" %}
+
+{% block page_title %}Prediction History{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <!-- Header Banner -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <h3 class="mb-1 fw-bold text-white brand-font">📊 AI Prediction History</h3>
+            <p class="text-secondary mb-0 small">Review past machine learning risk assessments, loan approvals, confidence scores, and applicant parameters.</p>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <button class="btn btn-outline-secondary btn-sm rounded-pill px-3 text-white" onclick="loadPredictionHistory()" title="Reload records">
+                <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+            </button>
+            <button class="btn btn-outline-info btn-sm rounded-pill px-3" onclick="exportHistoryCSV()">
+                <i class="bi bi-download me-1"></i>Export CSV
+            </button>
+            <a href="/predict" class="btn btn-primary btn-sm rounded-pill px-3">
+                <i class="bi bi-plus-lg me-1"></i>New Prediction
+            </a>
+        </div>
+    </div>
+
+    <!-- Top KPI Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-2dot4 col-lg">
+            <div class="card glass-card p-3 border-0 h-100">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="p-2.5 rounded-3 bg-info bg-opacity-10 text-info fs-4">
+                        <i class="bi bi-cpu"></i>
+                    </div>
+                    <div>
+                        <div class="text-secondary small fw-medium">Total Predictions</div>
+                        <h4 class="mb-0 text-white fw-bold brand-font" id="kpiTotal">0</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-2dot4 col-lg">
+            <div class="card glass-card p-3 border-0 h-100">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="p-2.5 rounded-3 bg-success bg-opacity-10 text-success fs-4">
+                        <i class="bi bi-check-circle-fill"></i>
+                    </div>
+                    <div>
+                        <div class="text-secondary small fw-medium">Approved</div>
+                        <h4 class="mb-0 text-success fw-bold brand-font" id="kpiApproved">0</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-2dot4 col-lg">
+            <div class="card glass-card p-3 border-0 h-100">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="p-2.5 rounded-3 bg-danger bg-opacity-10 text-danger fs-4">
+                        <i class="bi bi-x-circle-fill"></i>
+                    </div>
+                    <div>
+                        <div class="text-secondary small fw-medium">Rejected</div>
+                        <h4 class="mb-0 text-danger fw-bold brand-font" id="kpiRejected">0</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-2dot4 col-lg">
+            <div class="card glass-card p-3 border-0 h-100">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="p-2.5 rounded-3 bg-primary bg-opacity-10 text-primary fs-4">
+                        <i class="bi bi-percent"></i>
+                    </div>
+                    <div>
+                        <div class="text-secondary small fw-medium">Approval Rate</div>
+                        <h4 class="mb-0 text-white fw-bold brand-font" id="kpiRate">0%</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-2dot4 col-lg">
+            <div class="card glass-card p-3 border-0 h-100">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="p-2.5 rounded-3 bg-warning bg-opacity-10 text-warning fs-4">
+                        <i class="bi bi-cash-stack"></i>
+                    </div>
+                    <div>
+                        <div class="text-secondary small fw-medium">Avg Loan Amount</div>
+                        <h4 class="mb-0 text-white fw-bold brand-font" id="kpiAvgAmount">₹0</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Table Container -->
+    <div class="card glass-card border-0 shadow-lg mb-4">
+        <div class="card-header bg-transparent border-bottom border-secondary border-opacity-25 py-3">
+            <div class="row align-items-center g-3">
+                <div class="col-md-4">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-dark border-secondary border-opacity-25 text-secondary"><i class="bi bi-search"></i></span>
+                        <input type="text" id="searchHistory" class="form-control bg-dark border-secondary border-opacity-25 text-white" placeholder="Search by Ref ID, outcome, or risk..." onkeyup="filterHistory()">
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <div class="d-flex flex-wrap align-items-center justify-content-md-end gap-2">
+                        <!-- Status Filter -->
+                        <div class="btn-group btn-group-sm" role="group" aria-label="Status Filter">
+                            <button type="button" class="btn btn-outline-secondary active text-white status-btn" data-status="All" onclick="setStatusFilter('All', this)">All</button>
+                            <button type="button" class="btn btn-outline-success status-btn" data-status="Approved" onclick="setStatusFilter('Approved', this)">Approved</button>
+                            <button type="button" class="btn btn-outline-danger status-btn" data-status="Rejected" onclick="setStatusFilter('Rejected', this)">Rejected</button>
+                        </div>
+                        <!-- Risk Filter -->
+                        <div class="btn-group btn-group-sm" role="group" aria-label="Risk Filter">
+                            <button type="button" class="btn btn-outline-secondary active text-white risk-btn" data-risk="All" onclick="setRiskFilter('All', this)">All Risk</button>
+                            <button type="button" class="btn btn-outline-info risk-btn" data-risk="Low" onclick="setRiskFilter('Low', this)">Low</button>
+                            <button type="button" class="btn btn-outline-warning risk-btn" data-risk="Medium" onclick="setRiskFilter('Medium', this)">Medium</button>
+                            <button type="button" class="btn btn-outline-danger risk-btn" data-risk="High" onclick="setRiskFilter('High', this)">High</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-dark table-hover align-middle mb-0" style="background: transparent;">
+                    <thead style="background: rgba(30, 41, 59, 0.6);">
+                        <tr class="text-secondary small text-uppercase">
+                            <th class="ps-4 py-3">Date & Time</th>
+                            <th>Reference / App ID</th>
+                            <th>Loan Amount</th>
+                            <th>Applicant Income</th>
+                            <th>AI Outcome</th>
+                            <th>Approval Prob</th>
+                            <th>Risk Assessment</th>
+                            <th class="text-end pe-4">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTable">
+                        <tr>
+                            <td colspan="8" class="text-center text-secondary py-5">
+                                <div class="spinner-border spinner-border-sm text-info me-2" role="status"></div>
+                                Loading prediction history...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Prediction Details Modal -->
+<div class="modal fade" id="predictionDetailModal" tabindex="-1" aria-labelledby="predictionDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content glass-modal border-0 shadow-2xl">
+            <div class="modal-header border-bottom border-secondary border-opacity-25 pb-3">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="p-2 rounded bg-info bg-opacity-10 text-info fs-5">
+                        <i class="bi bi-file-earmark-medical"></i>
+                    </div>
+                    <div>
+                        <h5 class="modal-title text-white fw-bold brand-font mb-0" id="predictionDetailModalLabel">Prediction Details</h5>
+                        <small class="text-secondary" id="modalRefId">Ref ID: -</small>
+                    </div>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4" id="modalBodyContent">
+                <!-- Injected via JavaScript -->
+            </div>
+            <div class="modal-footer border-top border-secondary border-opacity-25 pt-3">
+                <div class="d-flex justify-content-between align-items-center w-100">
+                    <span class="text-muted small" id="modalTimestamp"><i class="bi bi-clock me-1"></i>-</span>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-secondary btn-sm rounded-pill px-3" data-bs-dismiss="modal">Close</button>
+                        <a href="/predict" class="btn btn-primary btn-sm rounded-pill px-3" id="modalRerunBtn">
+                            <i class="bi bi-magic me-1"></i>New Prediction
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.glass-card {
+    background: rgba(15, 23, 42, 0.85) !important;
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 16px;
+}
+.glass-modal {
+    background: rgba(15, 23, 42, 0.96) !important;
+    backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    border-radius: 20px;
+}
+.table-dark th {
+    font-weight: 600;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+.table-dark td {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 14px 12px;
+}
+.param-card {
+    background: rgba(30, 41, 59, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    padding: 12px 14px;
+}
+.param-label {
+    font-size: 0.725rem;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 3px;
+}
+.param-value {
+    font-size: 0.925rem;
+    font-weight: 600;
+    color: #ffffff;
+}
+</style>
+
+<script>
+let rawPredictions = [];
+let activeStatusFilter = 'All';
+let activeRiskFilter = 'All';
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadPredictionHistory();
+});
+
+async function loadPredictionHistory() {
+    const tbody = document.getElementById('historyTable');
+    tbody.innerHTML = '<tr><td colspan="8" class="text-center text-secondary py-5"><div class="spinner-border spinner-border-sm text-info me-2" role="status"></div>Loading prediction history...</td></tr>';
+
+    try {
+        const response = await fetch('/api/prediction/history');
+        const result = await response.json();
+        
+        if (result.status === 'success') {
+            rawPredictions = result.predictions || [];
+            updateKPIs(rawPredictions);
+            renderTable(rawPredictions);
+        } else {
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center text-danger py-4"><i class="bi bi-exclamation-triangle-fill me-2"></i>Error loading history: ' + (result.message || 'Unknown') + '</td></tr>';
+        }
+    } catch (error) {
+        console.error('History fetch error:', error);
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center text-danger py-4"><i class="bi bi-wifi-off me-2"></i>Failed to connect to prediction server</td></tr>';
+    }
+}
+
+function updateKPIs(predictions) {
+    const total = predictions.length;
+    const approved = predictions.filter(p => p.prediction_result === 'Approved').length;
+    const rejected = predictions.filter(p => p.prediction_result === 'Rejected').length;
+    const rate = total > 0 ? ((approved / total) * 100).toFixed(1) : '0.0';
+    
+    let totalAmt = 0;
+    predictions.forEach(p => { totalAmt += (p.loan_amount || 0); });
+    const avgAmt = total > 0 ? Math.round(totalAmt / total) : 0;
+
+    document.getElementById('kpiTotal').textContent = total;
+    document.getElementById('kpiApproved').textContent = approved;
+    document.getElementById('kpiRejected').textContent = rejected;
+    document.getElementById('kpiRate').textContent = `${rate}%`;
+    document.getElementById('kpiAvgAmount').textContent = '₹' + avgAmt.toLocaleString('en-IN');
+}
+
+function renderTable(predictions) {
+    const tbody = document.getElementById('historyTable');
+    
+    if (predictions.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="8" class="text-center text-secondary py-5">
+                    <i class="bi bi-inbox fs-2 d-block mb-2 text-muted"></i>
+                    <div class="fw-semibold text-white mb-1">No prediction history records found</div>
+                    <div class="small text-muted mb-3">Generate instant loan predictions using our AI risk engine.</div>
+                    <a href="/predict" class="btn btn-primary btn-sm rounded-pill px-3">
+                        <i class="bi bi-magic me-1"></i>Run Your First Prediction
+                    </a>
+                </td>
+            </tr>`;
+        return;
+    }
+
+    tbody.innerHTML = predictions.map((pred, index) => {
+        const rawDate = pred.prediction_date ? new Date(pred.prediction_date) : new Date();
+        const dateStr = rawDate.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+        const timeStr = rawDate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+        
+        const isApproved = pred.prediction_result === 'Approved';
+        const prob = Math.round((pred.approval_probability || 0) * 100);
+        const riskLevel = pred.risk_level || 'Medium Risk';
+        const isLow = riskLevel.toLowerCase().includes('low');
+        const isHigh = riskLevel.toLowerCase().includes('high');
+        
+        let riskBadgeClass = 'bg-warning bg-opacity-25 text-warning border border-warning border-opacity-25';
+        if (isLow) riskBadgeClass = 'bg-success bg-opacity-25 text-success border border-success border-opacity-25';
+        else if (isHigh) riskBadgeClass = 'bg-danger bg-opacity-25 text-danger border border-danger border-opacity-25';
+
+        const sourceBadge = pred.source ? `<span class="badge bg-secondary bg-opacity-25 text-secondary border border-secondary border-opacity-25 ms-1" style="font-size: 0.65rem;">${pred.source}</span>` : '';
+
+        return `
+            <tr>
+                <td class="ps-4">
+                    <div class="fw-bold text-white small">${dateStr}</div>
+                    <div class="text-muted" style="font-size: 0.725rem;">${timeStr}</div>
+                </td>
+                <td>
+                    <div class="d-flex align-items-center">
+                        <code class="text-info bg-info bg-opacity-10 px-2 py-1 rounded" style="font-size: 0.8rem;">${pred.application_id || 'PRED-ML'}</code>
+                        ${sourceBadge}
+                    </div>
+                </td>
+                <td class="fw-bold text-white">₹${(pred.loan_amount || 0).toLocaleString('en-IN')}</td>
+                <td>
+                    <div class="text-white small">₹${(pred.monthly_income || 0).toLocaleString('en-IN')}</div>
+                    ${pred.coapplicant_income ? `<div class="text-muted" style="font-size: 0.72rem;">+ ₹${pred.coapplicant_income.toLocaleString('en-IN')} co-app</div>` : ''}
+                </td>
+                <td>
+                    <span class="badge ${isApproved ? 'bg-success bg-opacity-25 text-success border border-success border-opacity-25' : 'bg-danger bg-opacity-25 text-danger border border-danger border-opacity-25'} px-2.5 py-1.5 rounded-pill fw-semibold">
+                        <i class="bi ${isApproved ? 'bi-check-circle-fill' : 'bi-x-circle-fill'} me-1"></i>${pred.prediction_result}
+                    </span>
+                </td>
+                <td style="min-width: 140px;">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="progress flex-grow-1" style="height: 6px; background: rgba(255,255,255,0.1); border-radius: 4px;">
+                            <div class="progress-bar ${isApproved ? 'bg-success' : 'bg-danger'}" style="width: ${prob}%;"></div>
+                        </div>
+                        <span class="small text-white fw-bold" style="font-size: 0.8rem;">${prob}%</span>
+                    </div>
+                </td>
+                <td>
+                    <span class="badge ${riskBadgeClass} px-2.5 py-1 rounded-pill small">
+                        ${riskLevel}
+                    </span>
+                </td>
+                <td class="text-end pe-4">
+                    <button class="btn btn-outline-info btn-sm rounded-pill px-2.5 py-1" onclick="openDetailsModal(${index})" title="View full input parameters and AI analysis">
+                        <i class="bi bi-eye me-1"></i>Details
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function openDetailsModal(index) {
+    const pred = rawPredictions[index];
+    if (!pred) return;
+
+    document.getElementById('modalRefId').textContent = `Ref / App ID: ${pred.application_id || 'PRED-ML'}`;
+    
+    const rawDate = pred.prediction_date ? new Date(pred.prediction_date) : new Date();
+    document.getElementById('modalTimestamp').innerHTML = `<i class="bi bi-clock me-1"></i>Evaluated on ${rawDate.toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}`;
+
+    const isApproved = pred.prediction_result === 'Approved';
+    const prob = Math.round((pred.approval_probability || 0) * 100);
+    const riskScore = pred.risk_score !== undefined ? pred.risk_score : (100 - prob);
+
+    const totalIncome = (pred.monthly_income || 0) + (pred.coapplicant_income || 0);
+
+    const modalBody = document.getElementById('modalBodyContent');
+    modalBody.innerHTML = `
+        <!-- AI Decision Overview Banner -->
+        <div class="p-3 rounded-3 mb-4 d-flex flex-wrap align-items-center justify-content-between gap-3" style="background: ${isApproved ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)'}; border: 1px solid ${isApproved ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'};">
+            <div class="d-flex align-items-center gap-3">
+                <div class="fs-2 text-${isApproved ? 'success' : 'danger'}">
+                    <i class="bi ${isApproved ? 'bi-check-circle-fill' : 'bi-x-circle-fill'}"></i>
+                </div>
+                <div>
+                    <h5 class="mb-0 fw-bold text-white">Prediction: <span class="text-${isApproved ? 'success' : 'danger'}">${pred.prediction_result}</span></h5>
+                    <div class="small text-secondary">AI Risk Level: <strong class="text-white">${pred.risk_level || 'Medium Risk'}</strong></div>
+                </div>
+            </div>
+            <div class="d-flex align-items-center gap-4">
+                <div class="text-center">
+                    <div class="text-secondary small" style="font-size: 0.72rem;">APPROVAL CHANCE</div>
+                    <div class="fs-5 fw-bold text-${isApproved ? 'success' : 'danger'}">${prob}%</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-secondary small" style="font-size: 0.72rem;">RISK SCORE</div>
+                    <div class="fs-5 fw-bold text-white">${riskScore}%</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 1: Financial Profile -->
+        <h6 class="text-info fw-bold mb-2 small text-uppercase"><i class="bi bi-wallet2 me-1"></i>Financial Profile</h6>
+        <div class="row g-2 mb-3">
+            <div class="col-md-3 col-6">
+                <div class="param-card">
+                    <div class="param-label">Requested Loan</div>
+                    <div class="param-value text-info">₹${(pred.loan_amount || 0).toLocaleString('en-IN')}</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="param-card">
+                    <div class="param-label">Loan Term</div>
+                    <div class="param-value">${pred.loan_amount_term || 36} Months</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="param-card">
+                    <div class="param-label">Applicant Income</div>
+                    <div class="param-value">₹${(pred.monthly_income || 0).toLocaleString('en-IN')}</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="param-card">
+                    <div class="param-label">Coapplicant Income</div>
+                    <div class="param-value">₹${(pred.coapplicant_income || 0).toLocaleString('en-IN')}</div>
+                </div>
+            </div>
+            <div class="col-md-4 col-6">
+                <div class="param-card">
+                    <div class="param-label">Total Monthly Cashflow</div>
+                    <div class="param-value text-success">₹${totalIncome.toLocaleString('en-IN')}</div>
+                </div>
+            </div>
+            <div class="col-md-4 col-6">
+                <div class="param-card">
+                    <div class="param-label">Credit Score</div>
+                    <div class="param-value">${pred.credit_score || '700+'}</div>
+                </div>
+            </div>
+            <div class="col-md-4 col-12">
+                <div class="param-card">
+                    <div class="param-label">Credit History Record</div>
+                    <div class="param-value ${pred.credit_history === 1 ? 'text-success' : 'text-warning'}">
+                        <i class="bi ${pred.credit_history === 1 ? 'bi-shield-check' : 'bi-shield-exclamation'} me-1"></i>${pred.credit_history === 1 ? 'Good Record (1)' : 'Poor / None (0)'}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 2: Applicant Background -->
+        <h6 class="text-info fw-bold mb-2 small text-uppercase"><i class="bi bi-person-badge me-1"></i>Applicant Background</h6>
+        <div class="row g-2 mb-3">
+            <div class="col-md-4 col-6">
+                <div class="param-card">
+                    <div class="param-label">Education</div>
+                    <div class="param-value">${pred.education || 'Graduate'}</div>
+                </div>
+            </div>
+            <div class="col-md-4 col-6">
+                <div class="param-card">
+                    <div class="param-label">Self Employed</div>
+                    <div class="param-value">${pred.self_employed || 'No'}</div>
+                </div>
+            </div>
+            <div class="col-md-4 col-6">
+                <div class="param-card">
+                    <div class="param-label">Property Area</div>
+                    <div class="param-value">${pred.property_area || 'Urban'}</div>
+                </div>
+            </div>
+            <div class="col-md-4 col-6">
+                <div class="param-card">
+                    <div class="param-label">Marital Status</div>
+                    <div class="param-value">${pred.married || 'Yes'}</div>
+                </div>
+            </div>
+            <div class="col-md-4 col-6">
+                <div class="param-card">
+                    <div class="param-label">Dependents</div>
+                    <div class="param-value">${pred.dependents || 0}</div>
+                </div>
+            </div>
+            <div class="col-md-4 col-6">
+                <div class="param-card">
+                    <div class="param-label">Gender</div>
+                    <div class="param-value">${pred.gender || 'Male'}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 3: Model & Source Metadata -->
+        <div class="d-flex justify-content-between align-items-center p-2.5 rounded bg-dark border border-secondary border-opacity-25 small text-secondary">
+            <div><i class="bi bi-diagram-2 me-1"></i>Model Version: <strong class="text-white">${pred.model_version || '1.0 (RandomForest & Heuristic)'}</strong></div>
+            <div><i class="bi bi-folder2-open me-1"></i>Origin: <strong class="text-white">${pred.source || 'Direct Prediction'}</strong></div>
+        </div>
+    `;
+
+    const detailModal = new bootstrap.Modal(document.getElementById('predictionDetailModal'));
+    detailModal.show();
+}
+
+function filterHistory() {
+    const query = document.getElementById('searchHistory').value.toLowerCase().trim();
+    let filtered = rawPredictions;
+
+    if (activeStatusFilter !== 'All') {
+        filtered = filtered.filter(p => p.prediction_result === activeStatusFilter);
+    }
+
+    if (activeRiskFilter !== 'All') {
+        filtered = filtered.filter(p => (p.risk_level || '').toLowerCase().includes(activeRiskFilter.toLowerCase()));
+    }
+
+    if (query) {
+        filtered = filtered.filter(p => 
+            (p.application_id && p.application_id.toLowerCase().includes(query)) ||
+            (p.prediction_result && p.prediction_result.toLowerCase().includes(query)) ||
+            (p.risk_level && p.risk_level.toLowerCase().includes(query)) ||
+            (p.source && p.source.toLowerCase().includes(query))
+        );
+    }
+
+    renderTable(filtered);
+}
+
+function setStatusFilter(status, btn) {
+    activeStatusFilter = status;
+    document.querySelectorAll('.status-btn').forEach(b => {
+        b.classList.remove('active', 'text-white');
+        if (b.dataset.status === 'All') b.classList.remove('btn-secondary');
+    });
+    btn.classList.add('active', 'text-white');
+    filterHistory();
+}
+
+function setRiskFilter(risk, btn) {
+    activeRiskFilter = risk;
+    document.querySelectorAll('.risk-btn').forEach(b => {
+        b.classList.remove('active', 'text-white');
+    });
+    btn.classList.add('active', 'text-white');
+    filterHistory();
+}
+
+function exportHistoryCSV() {
+    if (!rawPredictions || rawPredictions.length === 0) {
+        alert('No prediction history to export!');
+        return;
+    }
+    
+    let csv = 'Date,Application_ID,Source,Loan_Amount,Loan_Term,Applicant_Income,Coapplicant_Income,Credit_Score,Credit_History,Education,Self_Employed,Property_Area,Prediction,Probability_Pct,Risk_Level,Risk_Score\n';
+    rawPredictions.forEach(p => {
+        csv += `"${p.prediction_date || ''}","${p.application_id || ''}","${p.source || ''}",${p.loan_amount || 0},${p.loan_amount_term || 36},${p.monthly_income || 0},${p.coapplicant_income || 0},${p.credit_score || 700},${p.credit_history || 1},"${p.education || ''}","${p.self_employed || ''}","${p.property_area || ''}","${p.prediction_result || ''}",${Math.round((p.approval_probability || 0)*100)},"${p.risk_level || ''}",${p.risk_score || 0}\n`;
+    });
+    
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.setAttribute('href', url);
+    a.setAttribute('download', `Prediction_History_${new Date().toISOString().slice(0,10)}.csv`);
+    a.click();
+}
+</script>
+{% endblock %}

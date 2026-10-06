@@ -1,0 +1,730 @@
+{% extends "base.html" %}
+
+{% block page_title %}Enterprise Loan Application{% endblock %}
+
+{% block content %}
+<div class="enterprise-app-wrapper py-4 px-2 px-md-4">
+    <!-- Hero Header -->
+    <div class="enterprise-header card glass-card border-0 mb-4 p-4">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+            <div class="d-flex align-items-center gap-3">
+                <div class="header-icon-box rounded-4 p-3 bg-gradient-primary text-white fs-3 shadow-lg">
+                    <i class="bi bi-bank2"></i>
+                </div>
+                <div>
+                    <h2 class="header-title text-white fw-bold brand-font mb-1">Enterprise Loan Application</h2>
+                    <p class="text-secondary small mb-0 d-flex align-items-center gap-2">
+                        <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 rounded-pill"><i class="bi bi-shield-lock-fill me-1"></i>256-Bit SSL Encrypted</span>
+                        <span>&bull; Instant AI Risk Assessment</span>
+                    </p>
+                </div>
+            </div>
+            <div class="d-flex align-items-center gap-3">
+                <div class="progress-ring-box text-end">
+                    <div class="text-secondary small fw-bold text-uppercase">Overall Progress</div>
+                    <div class="fs-4 text-info fw-bold brand-font" id="progressPercentage">16% Completed</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Animated Progress Bar -->
+        <div class="progress mt-3" style="height: 6px; background: rgba(255,255,255,0.08); border-radius: 10px;">
+            <div class="progress-bar bg-gradient-cyan" id="progressBar" style="width: 16%; transition: width 0.4s ease;"></div>
+        </div>
+    </div>
+
+    <!-- Stepper Navigation Bar -->
+    <div class="stepper-nav-card card glass-card border-0 mb-4 p-3">
+        <div class="stepper-grid">
+            <div class="step-item active" data-step="1" onclick="jumpToStep(1)">
+                <div class="step-badge">01</div>
+                <div class="step-icon"><i class="bi bi-person-fill"></i></div>
+                <div class="step-label">Personal Info</div>
+            </div>
+            <div class="step-item" data-step="2" onclick="jumpToStep(2)">
+                <div class="step-badge">02</div>
+                <div class="step-icon"><i class="bi bi-geo-alt-fill"></i></div>
+                <div class="step-label">Contact Details</div>
+            </div>
+            <div class="step-item" data-step="3" onclick="jumpToStep(3)">
+                <div class="step-badge">03</div>
+                <div class="step-icon"><i class="bi bi-briefcase-fill"></i></div>
+                <div class="step-label">Employment</div>
+            </div>
+            <div class="step-item" data-step="4" onclick="jumpToStep(4)">
+                <div class="step-badge">04</div>
+                <div class="step-icon"><i class="bi bi-cash-stack"></i></div>
+                <div class="step-label">Financial Overview</div>
+            </div>
+            <div class="step-item" data-step="5" onclick="jumpToStep(5)">
+                <div class="step-badge">05</div>
+                <div class="step-icon"><i class="bi bi-credit-card-2-front-fill"></i></div>
+                <div class="step-label">Loan & Collateral</div>
+            </div>
+            <div class="step-item" data-step="6" onclick="jumpToStep(6)">
+                <div class="step-badge">06</div>
+                <div class="step-icon"><i class="bi bi-file-earmark-person-fill"></i></div>
+                <div class="step-label">Aadhaar Upload</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Form Container -->
+    <div class="card glass-card border-0 shadow-2xl p-4">
+        <form id="enterpriseApplicationForm" enctype="multipart/form-data" novalidate>
+            <!-- Step 1: Personal Information -->
+            <div class="form-section active" data-step="1">
+                <div class="section-banner mb-4 pb-3 border-bottom border-secondary border-opacity-25 d-flex align-items-center gap-3">
+                    <div class="p-2.5 rounded-3 bg-info bg-opacity-10 text-info fs-4"><i class="bi bi-person-lines-fill"></i></div>
+                    <div>
+                        <h4 class="text-white fw-bold mb-0">Step 1: Personal Profile Information</h4>
+                        <p class="text-secondary small mb-0">Provide basic identity details for borrower classification</p>
+                    </div>
+                </div>
+                
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label text-secondary small fw-semibold">FULL LEGAL NAME <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-dark border-secondary border-opacity-25 text-info"><i class="bi bi-person"></i></span>
+                            <input type="text" class="form-control bg-dark border-secondary border-opacity-25 text-white" name="full_name" placeholder="As per PAN / Aadhaar" required>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-secondary small fw-semibold">DATE OF BIRTH <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-dark border-secondary border-opacity-25 text-info"><i class="bi bi-calendar3"></i></span>
+                            <input type="date" class="form-control bg-dark border-secondary border-opacity-25 text-white" name="date_of_birth" required>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label text-secondary small fw-semibold">GENDER <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-dark border-secondary border-opacity-25 text-info"><i class="bi bi-gender-ambiguous"></i></span>
+                            <select class="form-select bg-dark border-secondary border-opacity-25 text-white" name="gender" required>
+                                <option value="">Select Gender</option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label text-secondary small fw-semibold">MARITAL STATUS <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-dark border-secondary border-opacity-25 text-info"><i class="bi bi-heart"></i></span>
+                            <select class="form-select bg-dark border-secondary border-opacity-25 text-white" name="marital_status" required>
+                                <option value="">Select Status</option>
+                                <option value="Single">Single</option>
+                                <option value="Married">Married</option>
+                                <option value="Divorced">Divorced</option>
+                                <option value="Widowed">Widowed</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label text-secondary small fw-semibold">NUMBER OF DEPENDENTS</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-dark border-secondary border-opacity-25 text-info"><i class="bi bi-people"></i></span>
+                            <input type="number" class="form-control bg-dark border-secondary border-opacity-25 text-white" name="dependents" value="0" min="0">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-secondary small fw-semibold">HIGHEST EDUCATION LEVEL <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-dark border-secondary border-opacity-25 text-info"><i class="bi bi-mortarboard"></i></span>
+                            <select class="form-select bg-dark border-secondary border-opacity-25 text-white" name="education_level" required>
+                                <option value="">Select Education</option>
+                                <option value="Undergraduate">Undergraduate</option>
+                                <option value="Graduate">Graduate</option>
+                                <option value="Post-Graduate">Post-Graduate</option>
+                                <option value="Professional">Professional (CA/MD/JD)</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-secondary small fw-semibold">PROPERTY AREA TYPE <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-dark border-secondary border-opacity-25 text-info"><i class="bi bi-building"></i></span>
+                            <select class="form-select bg-dark border-secondary border-opacity-25 text-white" name="property_area" required>
+                                <option value="">Select Area</option>
+                                <option value="Urban">Urban City</option>
+                                <option value="Semi-Urban">Semi-Urban Suburb</option>
+                                <option value="Rural">Rural Area</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Contact Information -->
+            <div class="form-section" data-step="2">
+                <div class="section-banner mb-4 pb-3 border-bottom border-secondary border-opacity-25 d-flex align-items-center gap-3">
+                    <div class="p-2.5 rounded-3 bg-info bg-opacity-10 text-info fs-4"><i class="bi bi-geo-alt-fill"></i></div>
+                    <div>
+                        <h4 class="text-white fw-bold mb-0">Step 2: Address & Contact Information</h4>
+                        <p class="text-secondary small mb-0">Where can our underwriting officers send official correspondence?</p>
+                    </div>
+                </div>
+                
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label text-secondary small fw-semibold">PRIMARY EMAIL ADDRESS <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-dark border-secondary border-opacity-25 text-info"><i class="bi bi-envelope"></i></span>
+                            <input type="email" class="form-control bg-dark border-secondary border-opacity-25 text-white" name="email_address" value="{{ current_user.email or '' }}" placeholder="email@domain.com" required>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-secondary small fw-semibold">MOBILE PHONE NUMBER <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-dark border-secondary border-opacity-25 text-info"><i class="bi bi-telephone"></i></span>
+                            <input type="tel" class="form-control bg-dark border-secondary border-opacity-25 text-white" name="phone_number" placeholder="+91 9876543210" required>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-secondary small fw-semibold">ALTERNATE PHONE NUMBER</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-dark border-secondary border-opacity-25 text-info"><i class="bi bi-phone"></i></span>
+                            <input type="tel" class="form-control bg-dark border-secondary border-opacity-25 text-white" name="alternate_phone" placeholder="+91 9123456789">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-secondary small fw-semibold">PINCODE / POSTAL CODE <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-dark border-secondary border-opacity-25 text-info"><i class="bi bi-pin-map"></i></span>
+                            <input type="text" class="form-control bg-dark border-secondary border-opacity-25 text-white" name="pincode" placeholder="6-digit Pincode" required>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label text-secondary small fw-semibold">RESIDENTIAL STREET ADDRESS <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-dark border-secondary border-opacity-25 text-info"><i class="bi bi-house-door"></i></span>
+                            <input type="text" class="form-control bg-dark border-secondary border-opacity-25 text-white" name="address" placeholder="Flat No, Building, Street Name" required>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-secondary small fw-semibold">CITY <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-dark border-secondary border-opacity-25 text-info"><i class="bi bi-buildings"></i></span>
+                            <input type="text" class="form-control bg-dark border-secondary border-opacity-25 text-white" name="city" placeholder="City Name" required>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-secondary small fw-semibold">STATE / PROVINCE <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-dark border-secondary border-opacity-25 text-info"><i class="bi bi-map"></i></span>
+                            <input type="text" class="form-control bg-dark border-secondary border-opacity-25 text-white" name="state" placeholder="State Name" required>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: Employment Details -->
+            <div class="form-section" data-step="3">
+                <div class="section-banner mb-4 pb-3 border-bottom border-secondary border-opacity-25 d-flex align-items-center gap-3">
+                    <div class="p-2.5 rounded-3 bg-info bg-opacity-10 text-info fs-4"><i class="bi bi-briefcase-fill"></i></div>
+                    <div>
+                        <h4 class="text-white fw-bold mb-0">Step 3: Employment & Occupation Profile</h4>
+                        <p class="text-secondary small mb-0">Help us verify your career stability and monthly cash flow</p>
+                    </div>
+                </div>
+                
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label text-secondary small fw-semibold">EMPLOYMENT TYPE <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-dark border-secondary border-opacity-25 text-info"><i class="bi bi-briefcase"></i></span>
+                            <select class="form-select bg-dark border-secondary border-opacity-25 text-white" name="employment_type" required>
+                                <option value="">Select Type</option>
+                                <option value="Salaried">Salaried Employee</option>
+                                <option value="Self-Employed">Self-Employed Professional</option>
+                                <option value="Business">Business Owner / Entrepreneur</option>
+                                <option value="Retired">Retired Pensioner</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-secondary small fw-semibold">CURRENT EMPLOYMENT STATUS <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-dark border-secondary border-opacity-25 text-info"><i class="bi bi-person-workspace"></i></span>
+                            <select class="form-select bg-dark border-secondary border-opacity-25 text-white" name="employment_status" required>
+                                <option value="">Select Status</option>
+                                <option value="Employed">Full-Time Employed</option>
+                                <option value="Self-Employed">Active Business</option>
+                                <option value="Retired">Retired</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-secondary small fw-semibold">COMPANY / BUSINESS NAME</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-dark border-secondary border-opacity-25 text-info"><i class="bi bi-building"></i></span>
+                            <input type="text" class="form-control bg-dark border-secondary border-opacity-25 text-white" name="company_name" placeholder="Employer or Firm Name">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-secondary small fw-semibold">TOTAL WORK EXPERIENCE (YEARS)</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-dark border-secondary border-opacity-25 text-info"><i class="bi bi-clock-history"></i></span>
+                            <input type="number" step="0.5" class="form-input form-control bg-dark border-secondary border-opacity-25 text-white" name="work_experience_years" min="0" placeholder="Years of experience">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-secondary small fw-semibold">NET MONTHLY SALARY / INCOME (₹) <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-dark border-secondary border-opacity-25 text-info"><i class="bi bi-currency-rupee"></i></span>
+                            <input type="number" class="form-control bg-dark border-secondary border-opacity-25 text-white" id="inputMonthlyIncome" name="monthly_income" placeholder="e.g. 85000" oninput="calculateFinancialSummary()" required>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-secondary small fw-semibold">GROSS ANNUAL INCOME (₹) <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-dark border-secondary border-opacity-25 text-info"><i class="bi bi-cash-stack"></i></span>
+                            <input type="number" class="form-control bg-dark border-secondary border-opacity-25 text-white" name="annual_income" placeholder="e.g. 1020000" required>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 4: Financial Information -->
+            <div class="form-section" data-step="4">
+                <div class="section-banner mb-4 pb-3 border-bottom border-secondary border-opacity-25 d-flex align-items-center gap-3">
+                    <div class="p-2.5 rounded-3 bg-info bg-opacity-10 text-info fs-4"><i class="bi bi-wallet2"></i></div>
+                    <div>
+                        <h4 class="text-white fw-bold mb-0">Step 4: Financial Overview & Existing Liabilities</h4>
+                        <p class="text-secondary small mb-0">Provide credit history and debt figures to calculate debt-to-income ratio</p>
+                    </div>
+                </div>
+
+                <!-- Financial Summary Badge -->
+                <div class="p-3 mb-4 rounded-3 border border-info border-opacity-25" style="background: rgba(6, 182, 212, 0.08);">
+                    <div class="row text-center g-2">
+                        <div class="col-md-4">
+                            <span class="text-secondary small d-block">Monthly Income</span>
+                            <strong class="text-info fs-5 brand-font" id="badgeMonthlyInc">₹0</strong>
+                        </div>
+                        <div class="col-md-4">
+                            <span class="text-secondary small d-block">Monthly Debt Obligation</span>
+                            <strong class="text-warning fs-5 brand-font" id="badgeMonthlyDebt">₹0</strong>
+                        </div>
+                        <div class="col-md-4">
+                            <span class="text-secondary small d-block">Estimated DTI Ratio</span>
+                            <strong class="text-success fs-5 brand-font" id="badgeDTI">0% (Healthy)</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label text-secondary small fw-semibold">OTHER MONTHLY INCOME (₹)</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-dark border-secondary border-opacity-25 text-info"><i class="bi bi-plus-circle"></i></span>
+                            <input type="number" class="form-control bg-dark border-secondary border-opacity-25 text-white" name="other_income" value="0" placeholder="0">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-secondary small fw-semibold">EXISTING TOTAL LOANS OUTSTANDING (₹)</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-dark border-secondary border-opacity-25 text-info"><i class="bi bi-dash-circle"></i></span>
+                            <input type="number" class="form-control bg-dark border-secondary border-opacity-25 text-white" name="existing_loans" value="0" placeholder="0">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-secondary small fw-semibold">MONTHLY DEBT / EMI PAYMENTS (₹)</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-dark border-secondary border-opacity-25 text-info"><i class="bi bi-graph-down"></i></span>
+                            <input type="number" class="form-control bg-dark border-secondary border-opacity-25 text-white" id="inputMonthlyDebt" name="monthly_debt" value="0" placeholder="0" oninput="calculateFinancialSummary()">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-secondary small fw-semibold">CREDIT SCORE (CIBIL / EXPERIAN)</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-dark border-secondary border-opacity-25 text-info"><i class="bi bi-star"></i></span>
+                            <input type="number" class="form-control bg-dark border-secondary border-opacity-25 text-white" name="credit_score" min="300" max="850" placeholder="300-850 (e.g. 750)">
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label text-secondary small fw-semibold">CREDIT HISTORY RECORD <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-dark border-secondary border-opacity-25 text-info"><i class="bi bi-clock-history"></i></span>
+                            <select class="form-select bg-dark border-secondary border-opacity-25 text-white" name="credit_history" required>
+                                <option value="">Select Record</option>
+                                <option value="1">Good Credit Record (No past defaults / clean history)</option>
+                                <option value="0">Poor / Limited Credit Record (Past delayed payments)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 5: Loan & Collateral Information -->
+            <div class="form-section" data-step="5">
+                <div class="section-banner mb-4 pb-3 border-bottom border-secondary border-opacity-25 d-flex align-items-center gap-3">
+                    <div class="p-2.5 rounded-3 bg-info bg-opacity-10 text-info fs-4"><i class="bi bi-credit-card-2-front"></i></div>
+                    <div>
+                        <h4 class="text-white fw-bold mb-0">Step 5: Loan Request & Collateral Security</h4>
+                        <p class="text-secondary small mb-0">Specify requested principal amount, tenure, and security assets</p>
+                    </div>
+                </div>
+
+                <!-- Instant EMI Calculation Box -->
+                <div class="p-3 mb-4 rounded-3 border border-success border-opacity-25" style="background: rgba(16, 185, 129, 0.08);">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="text-secondary small">Estimated Monthly EMI (at ~9.5% p.a.)</span>
+                            <h4 class="mb-0 text-success fw-bold brand-font" id="liveEMIPrediction">₹0 / month</h4>
+                        </div>
+                        <span class="badge bg-success bg-opacity-25 text-success border border-success border-opacity-25 px-3 py-1.5 rounded-pill">
+                            Instant Estimate
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label text-secondary small fw-semibold">REQUESTED LOAN AMOUNT (₹) <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-dark border-secondary border-opacity-25 text-info"><i class="bi bi-currency-rupee"></i></span>
+                            <input type="number" class="form-control bg-dark border-secondary border-opacity-25 text-white" id="inputLoanAmount" name="loan_amount" placeholder="e.g. 500000" oninput="calculateLiveEMI()" required>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-secondary small fw-semibold">LOAN TENURE (MONTHS) <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-dark border-secondary border-opacity-25 text-info"><i class="bi bi-calendar-range"></i></span>
+                            <input type="number" class="form-control bg-dark border-secondary border-opacity-25 text-white" id="inputLoanTerm" name="loan_amount_term" placeholder="12 to 360 months" oninput="calculateLiveEMI()" required>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label text-secondary small fw-semibold">LOAN PURPOSE & REASON <span class="text-danger">*</span></label>
+                        <textarea class="form-control bg-dark border-secondary border-opacity-25 text-white" name="loan_purpose" rows="2" placeholder="Briefly describe the purpose of this loan (e.g. Business Expansion, Home Construction, Working Capital)" required></textarea>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-secondary small fw-semibold">COLLATERAL ASSET TYPE</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-dark border-secondary border-opacity-25 text-info"><i class="bi bi-house font-size"></i></span>
+                            <input type="text" class="form-control bg-dark border-secondary border-opacity-25 text-white" name="collateral_type" placeholder="e.g. Residential Property, Fixed Deposit, Vehicle">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-secondary small fw-semibold">ESTIMATED COLLATERAL VALUE (₹)</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-dark border-secondary border-opacity-25 text-info"><i class="bi bi-cash"></i></span>
+                            <input type="number" class="form-control bg-dark border-secondary border-opacity-25 text-white" name="collateral_value" placeholder="0">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 6: Aadhaar Verification Upload -->
+            <div class="form-section" data-step="6">
+                <div class="section-banner mb-4 pb-3 border-bottom border-secondary border-opacity-25 d-flex align-items-center gap-3">
+                    <div class="p-2.5 rounded-3 bg-info bg-opacity-10 text-info fs-4"><i class="bi bi-file-earmark-person"></i></div>
+                    <div>
+                        <h4 class="text-white fw-bold mb-0">Step 6: Official Aadhaar Identity Upload</h4>
+                        <p class="text-secondary small mb-0">Upload a clear photo or PDF copy of your Aadhaar card for instant verification</p>
+                    </div>
+                </div>
+                
+                <div class="p-4 rounded-4 text-center border-2 border-dashed border-info border-opacity-50" id="dropzoneContainer" style="background: rgba(15, 23, 42, 0.6); cursor: pointer; transition: all 0.3s ease;">
+                    <input type="file" id="aadhaarFileInput" name="aadhaar_file" accept="image/*,.pdf" class="d-none" required>
+                    
+                    <div id="dropzoneInitial">
+                        <div class="p-3 rounded-circle bg-info bg-opacity-10 text-info d-inline-block mb-3 fs-1">
+                            <i class="bi bi-cloud-arrow-up-fill"></i>
+                        </div>
+                        <h5 class="text-white fw-bold">Upload Aadhaar Identity Card</h5>
+                        <p class="text-secondary small mb-2">Drag & drop your Aadhaar file here, or click to browse</p>
+                        <span class="badge bg-dark text-info border border-info border-opacity-25 px-3 py-1.5">Supported: JPG, PNG, PDF (Max 10MB)</span>
+                    </div>
+
+                    <div id="dropzonePreview" class="d-none">
+                        <div class="p-3 rounded- circle bg-success bg-opacity-10 text-success d-inline-block mb-2 fs-2">
+                            <i class="bi bi-check-circle-fill"></i>
+                        </div>
+                        <h5 class="text-white fw-bold mb-1" id="previewFileName">filename.pdf</h5>
+                        <p class="text-success small mb-3" id="previewFileSize">Ready for upload</p>
+                        <button type="button" class="btn btn-outline-danger btn-sm rounded-pill px-3" onclick="clearAadhaarFile(event)">
+                            <i class="bi bi-trash me-1"></i>Remove File
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sticky Navigation Controls -->
+            <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top border-secondary border-opacity-25">
+                <button type="button" class="btn btn-outline-secondary btn-md rounded-pill px-4" id="prevBtn" onclick="navigateStep(-1)" disabled>
+                    <i class="bi bi-arrow-left me-1.5"></i>Previous
+                </button>
+                
+                <div>
+                    <button type="button" class="btn btn-primary btn-md rounded-pill px-4" id="nextBtn" onclick="navigateStep(1)">
+                        Next Step <i class="bi bi-arrow-right ms-1.5"></i>
+                    </button>
+                    <button type="submit" class="btn btn-success btn-md rounded-pill px-5 d-none" id="submitBtn">
+                        <i class="bi bi-send-fill me-2"></i>Submit Enterprise Application
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.glass-card {
+    background: rgba(15, 23, 42, 0.82) !important;
+    backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 20px;
+}
+.bg-gradient-primary {
+    background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+}
+.bg-gradient-cyan {
+    background: linear-gradient(90deg, #06b6d4 0%, #3b82f6 100%);
+}
+.stepper-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 10px;
+}
+.step-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px 4px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 1px solid transparent;
+}
+.step-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+.step-item.active {
+    background: rgba(6, 182, 212, 0.12);
+    border-color: rgba(6, 182, 212, 0.3);
+}
+.step-item.completed .step-icon {
+    background: #10b981;
+    color: white;
+}
+.step-badge {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    font-weight: 700;
+}
+.step-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    color: var(--text-secondary);
+    margin: 4px 0;
+    transition: all 0.3s ease;
+}
+.step-item.active .step-icon {
+    background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%);
+    color: white;
+    box-shadow: 0 0 16px rgba(6, 182, 212, 0.4);
+    transform: scale(1.1);
+}
+.step-label {
+    font-size: 0.725rem;
+    color: var(--text-secondary);
+    font-weight: 600;
+    text-align: center;
+}
+.step-item.active .step-label {
+    color: white;
+}
+.form-section {
+    display: none;
+}
+.form-section.active {
+    display: block;
+    animation: fadeIn 0.35s ease-in-out;
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+@media (max-width: 768px) {
+    .stepper-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+</style>
+
+<script>
+let currentStep = 1;
+const totalSteps = 6;
+
+document.addEventListener('DOMContentLoaded', function() {
+    setupDropzone();
+    updateStepUI();
+});
+
+function navigateStep(direction) {
+    if (direction === 1) {
+        const currentSection = document.querySelector(`.form-section[data-step="${currentStep}"]`);
+        const invalidFields = currentSection.querySelectorAll(':invalid');
+        let hasError = false;
+        
+        currentSection.querySelectorAll('[required]').forEach(input => {
+            if (!input.value.trim()) {
+                input.classList.add('is-invalid');
+                hasError = true;
+            } else {
+                input.classList.remove('is-invalid');
+            }
+        });
+
+        if (hasError) {
+            alert('Please fill out all required fields in this step before proceeding.');
+            return;
+        }
+
+        if (currentStep < totalSteps) currentStep++;
+    } else if (direction === -1) {
+        if (currentStep > 1) currentStep--;
+    }
+    updateStepUI();
+}
+
+function jumpToStep(step) {
+    if (step < currentStep) {
+        currentStep = step;
+        updateStepUI();
+    }
+}
+
+function updateStepUI() {
+    document.querySelectorAll('.form-section').forEach((sec, idx) => {
+        sec.classList.toggle('active', idx + 1 === currentStep);
+    });
+    
+    document.querySelectorAll('.step-item').forEach((item, idx) => {
+        const stepNum = idx + 1;
+        item.classList.remove('active', 'completed');
+        if (stepNum === currentStep) {
+            item.classList.add('active');
+        } else if (stepNum < currentStep) {
+            item.classList.add('completed');
+        }
+    });
+
+    const pct = Math.round((currentStep / totalSteps) * 100);
+    document.getElementById('progressPercentage').textContent = `${pct}% Completed`;
+    document.getElementById('progressBar').style.width = `${pct}%`;
+
+    document.getElementById('prevBtn').disabled = currentStep === 1;
+    if (currentStep === totalSteps) {
+        document.getElementById('nextBtn').classList.add('d-none');
+        document.getElementById('submitBtn').classList.remove('d-none');
+    } else {
+        document.getElementById('nextBtn').classList.remove('d-none');
+        document.getElementById('submitBtn').classList.add('d-none');
+    }
+}
+
+function calculateFinancialSummary() {
+    const inc = parseFloat(document.getElementById('inputMonthlyIncome').value || 0);
+    const debt = parseFloat(document.getElementById('inputMonthlyDebt').value || 0);
+    
+    document.getElementById('badgeMonthlyInc').textContent = '₹' + inc.toLocaleString('en-IN');
+    document.getElementById('badgeMonthlyDebt').textContent = '₹' + debt.toLocaleString('en-IN');
+    
+    if (inc > 0) {
+        const dti = Math.round((debt / inc) * 100);
+        let statusText = dti <= 40 ? `${dti}% (Healthy)` : dti <= 60 ? `${dti}% (Moderate)` : `${dti}% (High Debt)`;
+        document.getElementById('badgeDTI').textContent = statusText;
+    }
+}
+
+function calculateLiveEMI() {
+    const amount = parseFloat(document.getElementById('inputLoanAmount').value || 0);
+    const months = parseFloat(document.getElementById('inputLoanTerm').value || 36);
+    
+    if (amount > 0 && months > 0) {
+        const annualRate = 0.095; // 9.5% p.a.
+        const r = annualRate / 12;
+        const emi = Math.round((amount * r * Math.pow(1 + r, months)) / (Math.pow(1 + r, months) - 1));
+        document.getElementById('liveEMIPrediction').textContent = '₹' + emi.toLocaleString('en-IN') + ' / month';
+    } else {
+        document.getElementById('liveEMIPrediction').textContent = '₹0 / month';
+    }
+}
+
+function setupDropzone() {
+    const container = document.getElementById('dropzoneContainer');
+    const input = document.getElementById('aadhaarFileInput');
+
+    container.addEventListener('click', (e) => {
+        if (!e.target.closest('#dropzonePreview button')) {
+            input.click();
+        }
+    });
+
+    input.addEventListener('change', () => {
+        if (input.files && input.files[0]) {
+            const f = input.files[0];
+            document.getElementById('dropzoneInitial').classList.add('d-none');
+            document.getElementById('dropzonePreview').classList.remove('d-none');
+            document.getElementById('previewFileName').textContent = f.name;
+            document.getElementById('previewFileSize').textContent = (f.size / (1024 * 1024)).toFixed(2) + ' MB';
+        }
+    });
+}
+
+function clearAadhaarFile(e) {
+    e.stopPropagation();
+    document.getElementById('aadhaarFileInput').value = '';
+    document.getElementById('dropzoneInitial').classList.remove('d-none');
+    document.getElementById('dropzonePreview').classList.add('d-none');
+}
+
+document.getElementById('enterpriseApplicationForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const submitBtn = document.getElementById('submitBtn');
+    
+    const fileInput = document.getElementById('aadhaarFileInput');
+    if (!fileInput.files || !fileInput.files[0]) {
+        alert('Please upload your Aadhaar document in Step 6.');
+        jumpToStep(6);
+        return;
+    }
+
+    const formData = new FormData(this);
+    try {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting...';
+
+        const response = await fetch('/api/enterprise/application/submit', {
+            method: 'POST',
+            body: formData
+        });
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            alert('🎉 Application Submitted Successfully! Application ID: ' + data.application_id);
+            window.location.href = '/workflow?application_id=' + data.application_id;
+        } else {
+            alert('Error submitting application: ' + (data.message || 'Unknown error'));
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="bi bi-send-fill me-2"></i>Submit Enterprise Application';
+        }
+    } catch(err) {
+        alert('Failed to connect to server: ' + err.message);
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="bi bi-send-fill me-2"></i>Submit Enterprise Application';
+    }
+});
+</script>
+{% endblock %}
