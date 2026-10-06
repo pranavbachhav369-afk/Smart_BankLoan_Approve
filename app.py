@@ -20,7 +20,7 @@ except ImportError:  # pragma: no cover - optional dependency for local env file
 
 load_dotenv()
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder='.')
 
 # Configuration
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-secret-key-here-change-in-production')
